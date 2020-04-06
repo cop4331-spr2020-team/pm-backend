@@ -1,16 +1,18 @@
 require('./config/env');
 
-const express = require('express');
-const morgan = require('morgan');
 const cors = require('cors');
+const morgan = require('morgan');
+const express = require('express');
 const appRoutes = require('./app/routes').router;
 const initMongo = require('./config/mongo');
+const cookieParser = require('cookie-parser');
 
 const port = process.env.PORT | 3000;
 
 const app = express();
 
 app.use(cors());
+app.use(cookieParser());
 app.use(express.json());
 app.use(morgan('combined'));
 

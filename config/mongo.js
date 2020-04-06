@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 
-const DB_URL = process.env.MONGO_ENDPOINT;
+const mongoEndpoint = process.env.MONGO_ENDPOINT;
 
 const connect = () => {
-  console.log(`Connecting to MongoDB database: ${DB_URL}`);
+  console.log(`Connecting to MongoDB database: ${mongoEndpoint}`);
   return mongoose
-      .connect(DB_URL, {useNewUrlParser: true, useUnifiedTopology: true})
+      .connect(mongoEndpoint, {useNewUrlParser: true, useUnifiedTopology: true})
       .then(() => {
         console.log('MongoDB connection succesful.');
       })
