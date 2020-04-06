@@ -55,10 +55,10 @@ const changePassword = async (req, res) => {
 };
 
 module.exports = {
-    login,
-    logout,
-    signup,
-    confirm,
-    reset,
-    changePassword
+  login,
+  logout,
+  signup,
+  confirm,
+  reset,
+  changePassword,
 }

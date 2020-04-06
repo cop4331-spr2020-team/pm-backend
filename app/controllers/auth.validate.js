@@ -21,5 +21,5 @@ const changePassword = [
 ];
 
 module.exports = {
-    signup, login, confirm, reset, require, changePassword
+  signup, login, confirm, reset, require, changePassword,
 };

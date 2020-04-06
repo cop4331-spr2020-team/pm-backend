@@ -1,23 +1,23 @@
 const express = require('express');
-const router  = express.Router();
-const controller = require('../controllers/auth')
-const validate   = require('../controllers/auth.validate')
+const router = new express.Router();
+const controller = require('../controllers/auth');
+const validate = require('../controllers/auth.validate');
 
 router.post(
     '/login',
     validate.login,
-    controller.login
+    controller.login,
 );
 
 router.post(
     '/logout',
-    controller.logout
+    controller.logout,
 );
 
 router.post(
     '/signup',
     validate.signup,
-    controller.signup
+    controller.signup,
 );
 
 router.post(
@@ -29,13 +29,13 @@ router.post(
 router.post(
     '/reset',
     validate.reset,
-    controller.reset
+    controller.reset,
 );
 
 router.post(
     '/change_password',
     validate.changePassword,
-    controller.changePassword
+    controller.changePassword,
 );
 
 module.exports = router;
