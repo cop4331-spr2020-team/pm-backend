@@ -25,4 +25,7 @@ initMongo()
       console.log(`Error intializing server. ERROR: ${err}`);
     });
 
-module.exports = app;
+module.exports = {
+  app,
+};
+

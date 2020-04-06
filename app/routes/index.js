@@ -7,4 +7,7 @@ router.get('/', (req, res) => {
   res.send('Parking Manager API v1.0.0');
 });
 
-module.exports = router;
+module.exports = {
+  router,
+};
+

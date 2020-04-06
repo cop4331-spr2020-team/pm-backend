@@ -38,4 +38,7 @@ router.post(
     controller.changePassword,
 );
 
-module.exports = router;
+module.exports = {
+  router,
+};
+
