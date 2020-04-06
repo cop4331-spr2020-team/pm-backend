@@ -9,6 +9,6 @@ module.exports = () => {
         console.log('MongoDB connection succesful.');
     })
     .catch(err => {
-        console.log(`MongoDB connection unsuccesful. ERROR: ${err}`)
+        console.log(`MongoDB connection unsuccesful. ERROR: ${err}`);
     });
-}
+};
