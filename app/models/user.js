@@ -8,6 +8,8 @@ const userSchema = new Schema({
   username: {type: String, required: true, unique: true},
   password: {type: String, required: true},
   verified: {type: Boolean, required: true, default: false},
+  reset_token: {type: String},
+  verification_token: {type: String},
 });
 
 module.exports = mongoose.model('User', userSchema);

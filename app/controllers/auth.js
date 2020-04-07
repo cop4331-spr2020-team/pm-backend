@@ -19,6 +19,14 @@ client.auth(redisPassword);
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 /**
+ * Generates a random token string.
+ * @return {String} token - randomly generated token string
+ */
+function generateTokenString() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
+/**
  * Returns a schema User model from a request.
  * @param {Object} req - request object
  * @return {Schema} user - Mongoose Schema for User model
@@ -34,6 +42,16 @@ function userObject(req) {
   });
 
   return user;
+}
+
+/**
+ * Returns the 'access_token' cookie from a request.
+ * @param {Object} req - request object
+ * @return {Token} tkn - jwt 'access_token'
+ */
+function tokenCookie(req) {
+  const cookie = req.cookies.access_token;
+  return cookie;
 }
 
 /**
@@ -63,18 +81,21 @@ function sendMail(recipient, subject, text) {
 function accountVerificationEmail(recipient, token) {
   const host = 'localhost';
   const port = process.env.PORT | 3000;
-  return sendMail(recipient, 'Account Verification Token',
+  return sendMail(recipient, 'Account Verification',
       `Verify account with the following link http://${host}:${port}/confirm?token=${token}`);
 }
 
 /**
- * Returns the 'access_token' cookie from a request.
- * @param {Object} req - request object
- * @return {Token} tkn - jwt 'access_token'
+ * Send password reset email to user.
+ * @param {String} recipient - whom to send mail to
+ * @param {String} token - token to embed in text
+ * @return {Promise} promise - promise to sending mail
  */
-function tokenCookie(req) {
-  const cookie = req.cookies.access_token;
-  return cookie;
+function passwordResetEmail(recipient, token) {
+  const host = 'localhost';
+  const port = process.env.PORT | 3000;
+  return sendMail(recipient, 'Password Reset',
+      `Reset password with the following link http://${host}:${port}/reset?token=${token}`);
 }
 
 /**
@@ -122,30 +143,34 @@ const logout = async (req, res) => {
   const token = tokenCookie(req);
 
   if (!token) {
-    res.sendStatus(400);
+    res.json({err: 'Missing token'}).sendStatus(400);
     return;
   }
 
-  const username = jwt.decode(token).payload;
-  client.get(username, function(err, reply) {
+  const payload = jwt.decode(token);
+  client.get(payload.username, function(err, reply) {
     // if we have no token for this user, they are technically
     // logged out.
     if (err) {
-      res.sendStatus(400);
+      res.status(500).json({err: 'Invalid token payload'});
       return;
     }
     if (!reply) {
+      res.cookie('access_token', 'deleted', {
+        expires: new Date(Date.now() - 900000),
+        httpOnly: true,
+      });
       res.sendStatus(200);
       return;
     }
     if (reply.toString() !== token) {
-      res.sendStatus(400);
+      res.json({err: 'Old access_token'}).status(403);
       return;
     }
 
-    client.del(username, function(err) {
+    client.del(payload.username, function(err) {
       if (err) {
-        res.sendStatus(400);
+        res.status(500).json({err: 'Server error'});
         return;
       }
 
@@ -174,6 +199,7 @@ const signup = async (req, res) => {
       })
       .then((user) => {
         const token = new Token({
+          _userId: user._id,
           email: user.email,
           token: crypto.randomBytes(16).toString('hex'),
         });
@@ -188,11 +214,10 @@ const signup = async (req, res) => {
       })
       .catch((err) => {
         console.log(err);
-        console.log(err.response.body);
-        res.sendStatus(400);
+        res.sendStatus(500);
       });
 };
-
+//$2b$12$feuM56mkrBFywhpk7KNoVOvxPvA2ziufAjREC81nzOtSgAla1I2Pe
 /**
  * Verifies user in DB.
  * @param {Object} req - request object
@@ -230,13 +255,14 @@ const resend = async (req, res) => {
   User.findOne({email: email})
       .then((user) => {
         if (!user) {
-          throw new Exception('User not found.');
+          throw new Error('User not found.');
         }
         if (user.verified) {
-          throw new Exception('User already verified.');
+          throw new Error('User already verified.');
         }
 
         const token = new Token({
+          _userId: user._id,
           email: email,
           token: crypto.randomBytes(16).toString('hex'),
         });
@@ -259,7 +285,35 @@ const resend = async (req, res) => {
  * @param {Object} res - response object
  */
 const reset = async (req, res) => {
+  const email = req.body.email;
+  User.findOne({email: email})
+      .then((user) => {
+        if (!user) {
+          throw new Error('User not found.');
+        }
 
+        user.reset_token = generateTokenString();
+        return user.save();
+      })
+      .then((user) => {
+        const token = new Token({
+          _userId: user._id,
+          email: user.email,
+          token: user.reset_token,
+        });
+
+        return token.save();
+      })
+      .then((token) => {
+        return passwordResetEmail(email, token.token);
+      })
+      .then(() => {
+        res.sendStatus(200);
+      })
+      .catch((err) => {
+        console.log(err);
+        res.sendStatus(403);
+      });
 };
 
 /**
@@ -268,8 +322,70 @@ const reset = async (req, res) => {
  * @param {Object} res - response object
  */
 const changePassword = async (req, res) => {
+  const accessToken = tokenCookie(req);
+  const resetToken = req.body.reset_token;
+  const newPassword = req.body.new_password;
 
+  if (resetToken) {
+    Token.findOneAndDelete({token: resetToken})
+        .then((token) => {
+          if (!token) {
+            throw new Error('Token not found.');
+          }
+
+          return User.findById(token._userId);
+        })
+        .then((user) => {
+          if (!user) {
+            throw new Error('User not found.');
+          }
+
+          if (user.reset_token !== resetToken) {
+            throw new Error('Token does not match user\'s reset token.');
+          }
+
+          user.reset_token = null;
+          return changePasswordImpl(user, newPassword);
+        })
+        .then((user) => {
+          res.sendStatus(200);
+        })
+        .catch((err) => {
+          console.log(err);
+          res.sendStatus(500);
+        });
+  } else if (accessToken) {
+    const payload = jwt.decode(accessToken);
+    User.findOne({username: payload.username})
+        .then((user) => {
+          if (!user) {
+            throw new Error('User not found.');
+          }
+
+          return changePasswordImpl(user, newPassword);
+        })
+        .then((user) => {
+          res.sendStatus(200);
+        })
+        .catch((err) => {
+          res.sendStatus(500);
+        });
+  }
 };
+
+/**
+ * Changes password for user.
+ * @param {User} user - user defined schema
+ * @param {String} newPassword - new password to change
+ * @return {Promise} promise - promise to change password
+ */
+function changePasswordImpl(user, newPassword) {
+  return bcrypt.hash(newPassword, saltRounds)
+      .then((hashedPassword) => {
+        user.password = hashedPassword;
+        return user.save();
+      });
+}
 
 module.exports = {
   login,

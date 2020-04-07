@@ -2,8 +2,9 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const tokenSchema = new Schema({
-  email: {type: String, required: true},
+  _userId: {type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User'},
   token: {type: String, required: true},
+  email: {type: String},
   createdAt: {type: Date, required: true, default: Date.now, expires: 43200},
 });
 
