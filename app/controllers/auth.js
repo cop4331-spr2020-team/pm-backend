@@ -63,7 +63,7 @@ function tokenCookie(req) {
  */
 function sendMail(recipient, subject, text) {
   const mail = {
-    from: 'marloncalv98@gmail.com',
+    from: 'no.reply.parkingmanager@gmail.com',
     to: recipient,
     subject: subject,
     text: text,
@@ -217,7 +217,7 @@ const signup = async (req, res) => {
         res.sendStatus(500);
       });
 };
-//$2b$12$feuM56mkrBFywhpk7KNoVOvxPvA2ziufAjREC81nzOtSgAla1I2Pe
+
 /**
  * Verifies user in DB.
  * @param {Object} req - request object
