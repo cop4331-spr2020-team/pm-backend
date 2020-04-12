@@ -207,7 +207,7 @@ const signup = async (req, res) => {
         return token.save();
       })
       .then((token) => {
-        return accountVerificationEmail('marloncalv98@gmail.com', token.token);
+        return accountVerificationEmail(token.email, token.token);
       })
       .then(() => {
         res.sendStatus(200);
