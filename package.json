@@ -4,7 +4,7 @@
   "description": "backend for pm",
   "main": "index.js",
   "scripts": {
-    "start": "node NODE_ENV=production index.js",
+    "start": "NODE_ENV=production node index.js",
     "dev": "nodemon NODE_ENV=development  index.js",
     "test": "test"
   },
