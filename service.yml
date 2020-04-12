@@ -4,6 +4,7 @@ metadata:
   name: parking-manager-service
 spec:
   type: LoadBalancer
+  loadBalancerIP: "34.73.25.235"
   ports:
     - port: 80
       targetPort: 8080

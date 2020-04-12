@@ -11,8 +11,9 @@
 name: Build and Deploy to GKE
 
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - master
 
 # Environment variables available to all jobs and steps in this workflow
 env:
@@ -23,7 +24,9 @@ env:
   GKE_CLUSTER: parking-manager-cluster
   IMAGE: parking-manager-backend-image
   REGISTRY_HOSTNAME: gcr.io
-  DEPLOYMENT_NAME: parking-manager-backend
+  DEPLOYMENT_NAME: parking-manager-backend-deployment
+  ENV_DATA: ${{ secrets.SERVER_ENV }}
+  ENV_FILE: .env
 
 jobs:
   setup-build-publish-deploy:
@@ -46,6 +49,11 @@ jobs:
         # Set up docker to authenticate
         # via gcloud command-line tool.
         gcloud auth configure-docker
+
+    - name: Create Enviroment Files
+      run: |
+        echo "$ENV_DATA" > "$ENV_FILE"
+      shell: bash
       
     # Build the Docker image
     - name: Build
@@ -69,7 +77,7 @@ jobs:
     - name: Deploy
       run: |
         gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project $GKE_PROJECT
-        ./kustomize edit set image $REGISTRY_HOSTNAME/$GKE_PROJECT/$IMAGE:${GITHUB_SHA}
+        ./kustomize edit set image gcr.io/PROJECT_ID/IMAGE:TAG=gcr.io/$GKE_PROJECT/$IMAGE:${GITHUB_SHA}
         ./kustomize build . | kubectl apply -f -
         kubectl rollout status deployment/$DEPLOYMENT_NAME
         kubectl get services -o wide
