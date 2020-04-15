@@ -63,7 +63,7 @@ function tokenCookie(req) {
  */
 function sendMail(recipient, subject, text) {
   const mail = {
-    from: 'no.reply.parkingmanager@gmail.com',
+    from: process.env.SENDGRID_EMAIL,
     to: recipient,
     subject: subject,
     text: text,
@@ -80,9 +80,18 @@ function sendMail(recipient, subject, text) {
  */
 function accountVerificationEmail(recipient, token) {
   const host = 'localhost';
-  const port = process.env.PORT | 3000;
+  const port = process.env.PORT || 3000;
+
+  const env = process.env.NODE_ENV || 'development';
+  let url = '';
+  if (env === 'development') {
+    url = `http://${host}:${port}/confirm?token=${token}`;
+  } else {
+    url = `http://http://34.73.25.235/confirm?token=${token}`;
+  }
+
   return sendMail(recipient, 'Account Verification',
-      `Verify account with the following link http://${host}:${port}/confirm?token=${token}`);
+      `Verify account with the following link ${url}`);
 }
 
 /**
@@ -93,9 +102,18 @@ function accountVerificationEmail(recipient, token) {
  */
 function passwordResetEmail(recipient, token) {
   const host = 'localhost';
-  const port = process.env.PORT | 3000;
+  const port = process.env.PORT || 3000;
+
+  const env = process.env.NODE_ENV || 'development';
+  let url = '';
+  if (env === 'development') {
+    url = `http://${host}:${port}/reset?token=${token}`;
+  } else {
+    url = `http://http://34.73.25.235/reset?token=${token}`;
+  }
+
   return sendMail(recipient, 'Password Reset',
-      `Reset password with the following link http://${host}:${port}/reset?token=${token}`);
+      `Reset password with the following link ${url}`);
 }
 
 /**
@@ -107,10 +125,28 @@ function passwordResetEmail(recipient, token) {
 const login = async (req, res) => {
   const _user = userObject(req);
   User.findOne({username: _user.username})
-      .then((user) => bcrypt.compare(_user.password, user.password))
+      .catch((error) => {
+        error.statusCode = 500;
+        error.message = 'server failure during finding user';
+        throw error;
+      })
+      .then((user) => {
+        if (!user) {
+          const error = new Error();
+          error.statusCode = 401;
+          error.message = 'invalid credentials';
+          throw error;
+        }
+
+        return bcrypt.compare(_user.password, user.password);
+      })
       .then((result) => {
         if (!result) {
-          throw new Error('Password unmatched');
+          const error = new Error();
+          error.statusCode = 401;
+          error.message = 'invalid credentials';
+
+          throw error;
         }
 
         const token = jwt.sign({username: _user.username}, jwtKey, {
@@ -123,14 +159,19 @@ const login = async (req, res) => {
           httpOnly: true,
         });
 
-        return promisify(client.set).bind(client)(_user.username, token);
+        return promisify(client.set).bind(client)(_user.username, token)
+            .catch((error) => {
+              error.statusCode = 500;
+              error.message = 'server failure while storing user\'s access token';
+              throw error;
+            });
       })
       .then((result) => {
-        res.sendStatus(200);
+        res.status(200).json({error: ''});
       })
       .catch((err) => {
         res.clearCookie('access_token', {path: '/'});
-        res.sendStatus(401);
+        res.status(err.statusCode).json({error: err.message});
       });
 };
 
@@ -143,7 +184,7 @@ const logout = async (req, res) => {
   const token = tokenCookie(req);
 
   if (!token) {
-    res.json({err: 'Missing token'}).sendStatus(400);
+    res.json({error: 'Missing token'}).sendStatus(400);
     return;
   }
 
@@ -152,7 +193,7 @@ const logout = async (req, res) => {
     // if we have no token for this user, they are technically
     // logged out.
     if (err) {
-      res.status(500).json({err: 'Invalid token payload'});
+      res.status(500).json({error: 'Invalid token payload'});
       return;
     }
     if (!reply) {
@@ -164,13 +205,13 @@ const logout = async (req, res) => {
       return;
     }
     if (reply.toString() !== token) {
-      res.json({err: 'Old access_token'}).status(403);
+      res.json({error: 'Old access_token'}).status(403);
       return;
     }
 
     client.del(payload.username, function(err) {
       if (err) {
-        res.status(500).json({err: 'Server error'});
+        res.status(500).json({error: 'Server error'});
         return;
       }
 
@@ -195,7 +236,12 @@ const signup = async (req, res) => {
   bcrypt.hash(origPassword, saltRounds)
       .then((hashedPassword) => {
         user.password = hashedPassword;
-        return user.save();
+        return user.save()
+            .catch((error) => {
+              error.statusCode = 500;
+              error.message = 'Unable to create user';
+              throw error;
+            });
       })
       .then((user) => {
         const token = new Token({
@@ -204,17 +250,27 @@ const signup = async (req, res) => {
           token: crypto.randomBytes(16).toString('hex'),
         });
 
-        return token.save();
+        return token.save()
+            .catch((error) => {
+              error.statusCode = 500;
+              error.message = 'Unable to create verification token';
+              throw error;
+            });
       })
       .then((token) => {
-        return accountVerificationEmail(token.email, token.token);
+        return accountVerificationEmail(token.email, token.token)
+            .catch((error) => {
+              error.statusCode = 500;
+              error.message = 'Unable to send verfication email';
+              throw error;
+            });
       })
       .then(() => {
         res.sendStatus(200);
       })
-      .catch((err) => {
-        console.log(err);
-        res.sendStatus(500);
+      .catch((error) => {
+        console.log(error);
+        res.status(error.statusCode).json({error: error.message});
       });
 };
 
@@ -227,26 +283,54 @@ const confirm = async (req, res) => {
   const token = req.body.token;
   const email = req.body.email;
   Token.findOne({token: token})
+      .catch((error) => {
+        error.statusCode = 500;
+        error.message = 'server failure during token find';
+        throw error;
+      })
       .then((token) => {
         if (!token) {
-          throw new Error('Token not found.');
+          const error = new Error();
+          error.statusCode = 400;
+          error.message = 'token not found';
+
+          throw error;
         }
 
-        return User.findOne({email: email});
+        return User.findOne({email: email}).catch((error) => {
+          error.statusCode = 500;
+          error.message = 'server failure during user find';
+          throw error;
+        });
       })
       .then((user) => {
-        if (!user) throw new Error('User not found.');
-        if (user.verified) throw new Error('User already verified');
+        if (!user) {
+          const error = new Error();
+          error.statusCode = 400;
+          error.message = 'user not found';
+
+          throw error;
+        }
+        if (user.verified) {
+          const error = new Error();
+          error.statusCode = 400;
+          error.message = 'user already verified';
+
+          throw error;
+        }
 
         user.verified = true;
-        return user.save();
+        return user.save().catch((error) => {
+          error.statusCode = 500;
+          error.message = 'server failure during user update';
+          throw error;
+        });
       })
       .then(() => {
         res.sendStatus(200);
       })
       .catch((err) => {
-        console.log(err);
-        res.sendStatus(401);
+        res.status(err.statusCode).json({error: err.message});
       });
 };
 
@@ -254,29 +338,52 @@ const resend = async (req, res) => {
   const email = req.body.email;
   User.findOne({email: email})
       .then((user) => {
+        // Prevent user enumeration
         if (!user) {
-          throw new Error('User not found.');
+          const error = new Error();
+          error.statusCode = 200;
+          error.message = '';
+          throw error;
         }
         if (user.verified) {
-          throw new Error('User already verified.');
+          const error = new Error();
+          error.statusCode = 200;
+          error.message = '';
+          throw error;
         }
 
+        user.verification_token = crypto.randomBytes(16).toString('hex');
+        return user.save().catch((error) => {
+          error.statusCode = 500;
+          error.message = 'server failure saving user verification token';
+          throw error;
+        });
+      })
+      .then((user) => {
         const token = new Token({
           _userId: user._id,
-          email: email,
-          token: crypto.randomBytes(16).toString('hex'),
+          email: user.email,
+          token: user.token,
         });
 
-        return token.save();
+        return token.save().catch((error) => {
+          error.statusCode = 500;
+          error.message = 'server failure saving verification token';
+          throw error;
+        });
       })
       .then((token) => {
-        return accountVerification(user.email, token.token);
+        return accountVerification(user.email, token.token).catch((error) => {
+          error.statusCode = 500;
+          error.message = 'server failure sending verification email';
+          throw error;
+        });
       })
       .then(() => {
-        res.sendStatus(200);
+        res.status(200).json({error: ''});
       })
       .catch((err) => {
-        console.log(err);
+        res.status(err.statusCode).json({error: err.message});
       });
 };
 /**
@@ -287,13 +394,27 @@ const resend = async (req, res) => {
 const reset = async (req, res) => {
   const email = req.body.email;
   User.findOne({email: email})
+      .catch((error) => {
+        error.statusCode = 500;
+        error.message = 'server failure during user search';
+        throw error;
+      })
       .then((user) => {
         if (!user) {
-          throw new Error('User not found.');
+          // We want to avoid user enumeration.
+          const error = new Error();
+          error.statusCode = 200;
+          error.message = '';
+
+          throw error;
         }
 
         user.reset_token = generateTokenString();
-        return user.save();
+        return user.save().catch((error) => {
+          error.statusCode = 500;
+          error.message = 'server failure during user update';
+          throw error;
+        });
       })
       .then((user) => {
         const token = new Token({
@@ -302,17 +423,24 @@ const reset = async (req, res) => {
           token: user.reset_token,
         });
 
-        return token.save();
+        return token.save().catch((error) => {
+          error.statusCode = 500;
+          error.message = 'server failure during token save';
+          throw error;
+        });
       })
       .then((token) => {
-        return passwordResetEmail(email, token.token);
+        return passwordResetEmail(email, token.token).catch((error) => {
+          error.statusCode = 500;
+          error.message = 'server failure during sending of token via email';
+          throw error;
+        });
       })
       .then(() => {
-        res.sendStatus(200);
+        res.status(200).json({error: ''});
       })
       .catch((err) => {
-        console.log(err);
-        res.sendStatus(403);
+        res.status(err.statusCode).json({error: err.message});
       });
 };
 
@@ -328,47 +456,79 @@ const changePassword = async (req, res) => {
 
   if (resetToken) {
     Token.findOneAndDelete({token: resetToken})
+        .catch((error) => {
+          error.statusCode = 500;
+          error.message = 'server failure during token search';
+          throw error;
+        })
         .then((token) => {
           if (!token) {
-            throw new Error('Token not found.');
+            const error = new Error();
+            error.statusCode = 401;
+            error.message = 'token not found';
+
+            throw error;
           }
 
-          return User.findById(token._userId);
+          return User.findById(token._userId).catch((error) => {
+            error.statusCode = 500;
+            error.message = 'server failure during finding user';
+            throw error;
+          });
         })
         .then((user) => {
           if (!user) {
-            throw new Error('User not found.');
+            const error = new Error();
+            error.statusCode = 409;
+            error.message = 'user for this token not found';
+
+            throw error;
           }
 
           if (user.reset_token !== resetToken) {
-            throw new Error('Token does not match user\'s reset token.');
+            const error = new Error();
+            error.statusCode = 403;
+            error.message = 'reset token is not valid, probably expired';
+
+            throw error;
           }
 
           user.reset_token = null;
-          return changePasswordImpl(user, newPassword);
+          return changePasswordImpl(user, newPassword).catch((error) => {
+            error.statusCode = 500;
+            error.message = 'server failure during updating user\'s password';
+            throw error;
+          });
         })
         .then((user) => {
-          res.sendStatus(200);
+          res.status(200).json({error: ''});
         })
         .catch((err) => {
-          console.log(err);
-          res.sendStatus(500);
+          res.json({error: err.message}).status(err.statusCode);
         });
   } else if (accessToken) {
     const payload = jwt.decode(accessToken);
     User.findOne({username: payload.username})
         .then((user) => {
           if (!user) {
-            throw new Error('User not found.');
+            const error = new Error();
+            error.statusCode = 409;
+            error.message = 'user for this token not found';
+
+            throw error;
           }
 
-          return changePasswordImpl(user, newPassword);
+          return changePasswordImpl(user, newPassword).catch((error) => {
+            error.statusCode = 500;
+            error.message = 'server failure during update user\'s password';
+            throw error;
+          });
         })
         .then((user) => {
-          res.sendStatus(200);
+          res.status(200).error({error: ''});
         })
         .catch((err) => {
-          res.sendStatus(500);
+          res.json({error: err.message}).status(err.statusCode);
         });
   }
 };
