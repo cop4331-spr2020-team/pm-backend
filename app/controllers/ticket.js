@@ -5,6 +5,18 @@ const User = require('../models/user');
 const Ticket = require('../models/ticket');
 
 /**
+ * Encode file data to base64 encoded string
+ * @param {*} file - file path to encode
+ * @return {Buffer} base64 encoded buffer of file
+ */
+function base64_encode(file) {
+  // read binary data
+  const bitmap = fs.readFileSync(file);
+  // convert binary data to base64 encoded string
+  return new Buffer(bitmap).toString('base64');
+}
+
+/**
  * Parses file content of image
  * @param {*} imagePath path to image to parse
  * @return {String} data image binary data
@@ -39,7 +51,6 @@ function getTicketsQuery(query) {
 }
 
 const createTicket = async (req, res) => {
-
   console.log(req);
 
   if (req.error) {
@@ -136,12 +147,12 @@ const updateTicket = async (req, res) => {
           ticket[key] = req.body[key];
         });
 
-        console.log(ticket);
-
         if (req.file) {
-          image = readImage(req.file.path);
+          const image = base64_encode(req.file.path);
           const buffer = readChunk.sync(req.file.path, 0, 12);
-          const imageInfo =imageType(buffer);
+          const imageInfo = imageType(buffer);
+          console.log('test');
+          console.log(image);
           ticket.image = {
             data: image,
             contentType: imageInfo.mime,
