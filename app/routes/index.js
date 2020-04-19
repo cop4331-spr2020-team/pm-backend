@@ -14,10 +14,12 @@ router.get('/enums', (req, res) => {
     'violations': [
       'No Tag',
       'Expired Tag',
+      'Improper Parking',
     ],
     'locations': [
       'Garage A',
       'Garage B',
+      'Garage C',
     ],
   });
 });
