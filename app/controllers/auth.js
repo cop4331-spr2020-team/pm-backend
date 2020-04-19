@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const Token = require('../models/token');
 const sgMail = require('@sendgrid/mail');
-const isLoggedIn = require('../controllers/auth.validate').isLoggedIn;
 const promisify = require('util').promisify;
 
 const expiry = Number(process.env.EXPIRY);
@@ -172,7 +171,7 @@ const login = async (req, res) => {
       })
       .catch((err) => {
         res.clearCookie('access_token', {path: '/'});
-        res.status(err.statusCode).json({error: err.message});
+        res.json(err).status(err.statusCode);
       });
 };
 
@@ -509,13 +508,12 @@ const changePassword = async (req, res) => {
         });
   } else if (accessToken) {
     isLoggedIn(req, res, () => {
-
       if (req.error) {
         res.send(req.error).status(req.error.statusCode);
         return;
       }
 
-      User.findOne({username: payload.username})
+      User.findOne({username: req.username})
           .then((user) => {
             if (!user) {
               const error = new Error();
@@ -541,6 +539,37 @@ const changePassword = async (req, res) => {
   }
 };
 
+const getUserInfo = async (req, res) => {
+  if (req.error) {
+    res.send(req.error).status(req.error.statusCode);
+    return;
+  }
+
+  User.findOne({username: req.username})
+      .then((user) => {
+        if (!user) {
+          const error = new Error();
+          error.statusCode = 409;
+          error.message = 'user for this token not found';
+
+          throw error;
+        }
+
+        const response = {
+          userId: user._id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          username: user.username,
+        };
+
+        res.json(response).status(200);
+      })
+      .catch((err) => {
+        res.json({error: err}).status(err.statusCode);
+      });
+};
+
 /**
  * Changes password for user.
  * @param {User} user - user defined schema
@@ -562,6 +591,7 @@ module.exports = {
   confirm,
   reset,
   changePassword,
+  getUserInfo,
   client,
   jwt,
 };

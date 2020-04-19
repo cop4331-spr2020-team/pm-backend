@@ -38,6 +38,12 @@ router.post(
     controller.changePassword,
 );
 
+router.get(
+    '/user_info',
+    validate.isLoggedIn,
+    controller.getUserInfo,
+);
+
 module.exports = {
   router,
 };
