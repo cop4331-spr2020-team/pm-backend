@@ -1,8 +1,9 @@
+const fs = require('fs');
 const User = require('../models/user');
 const Ticket = require('../models/ticket');
 
-function getTicketsQuery(queryOptions) {
-    
+function readImage(imagePath) {
+    return fs.readFileSync(imagePath);
 }
 
 const createTicket = async (req, res) => {
@@ -15,8 +16,9 @@ const createTicket = async (req, res) => {
     location,
     // eslint-disable-next-line camelcase
     additional_comments,
-    image,
   } = req.body;
+
+  const image = readImage(req.image.path);
 
   const username = req.username;
   User.findOne({username: username})
@@ -60,10 +62,16 @@ const createTicket = async (req, res) => {
 
 const updateTicket = async (req, res) => {
   const ticketId = req.param.id;
+
+  if (req.image) {
+    req.image = readImage(req.image.path);
+  }
+  
   const update = Object.assign(req.body, req.image);
   const opts = {
     runValidators: true,
   };
+
 
   Ticket.updateOne({_id: ticketId}, update, opts)
       .catch((error) => {
