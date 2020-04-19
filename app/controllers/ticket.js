@@ -24,13 +24,13 @@ function getTicketsQuery(query) {
   }
   if (query.created_after && query.created_before) {
     mongooseQuery.createdAt = {
-      $gte: new Date(query.created_after),
-      $lt: new Date(query.created_before),
+      $gte: new Date(Number(query.created_after)),
+      $lt: new Date(Number(query.created_before)),
     };
   } else if (query.created_after) {
-    mongooseQuery.createdAt = {$gte: new Date(query.created_after)};
+    mongooseQuery.createdAt = {$gte: new Date(Number(query.created_after))};
   } else if (query.created_before) {
-    mongooseQuery.createdAt = {$lt: new Date(query.created_after)};
+    mongooseQuery.createdAt = {$lt: new Date(Number(query.created_before))};
   }
   if (query.day_start) {
     // mongooseQuery['day_start'] = {},
