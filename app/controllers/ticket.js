@@ -43,6 +43,12 @@ function getTicketsQuery(query) {
 }
 
 const createTicket = async (req, res) => {
+
+  if (req.error) {
+    res.json(req.error).status(req.error.statusCode);
+    return;
+  }
+
   const {
     // eslint-disable-next-line camelcase
     violation,
@@ -97,12 +103,17 @@ const createTicket = async (req, res) => {
         res.json({ticket_id: ticket._id, error: ''}).status(200);
       })
       .catch((error) => {
-        res.json({error: error.message}).status(error.statusCode);
+        res.json({error}).status(error.statusCode);
       });
 };
 
 const updateTicket = async (req, res) => {
   const ticketId = req.param.id;
+
+  if (req.error) {
+    res.json(req.error).status(req.error.statusCode);
+    return;
+  }
 
   if (req.image) {
     req.image = readImage(req.image.path);
@@ -113,23 +124,30 @@ const updateTicket = async (req, res) => {
     runValidators: true,
   };
 
+  console.log(update);
 
   Ticket.updateOne({_id: ticketId}, update, opts)
       .catch((error) => {
-        error.statusCode = '404',
-        error.message = 'Could not find ticket';
+        error.statusCode = '400',
+        error.message = 'Bad query parameters';
         throw error;
       })
       .then(() => {
         res.json({error: ''}).status(200);
       })
       .catch((error) => {
-        res.json({error: error.message}).status(error.statusCode);
+        res.json(error).status(error.statusCode);
       });
 };
 
 const removeTicket = async (req, res) => {
   const ticketId = req.param.id;
+
+  if (req.error) {
+    res.json(req.error).status(req.error.statusCode);
+    return;
+  }
+
   Ticket.findByIdAndRemove(ticketId)
       .catch((error) => {
         error.statusCode = 500;
@@ -147,12 +165,18 @@ const removeTicket = async (req, res) => {
         res.json({error: ''}).status(200);
       })
       .catch((error) => {
-        res.json({error: error.message}).status(error.statusCode);
+        res.json({error}).status(error.statusCode);
       });
 };
 
 const getTicket = async (req, res) => {
   const ticketId = req.params.ticket_id;
+
+  if (req.error) {
+    res.json(req.error).status(req.error.statusCode);
+    return;
+  }
+
   Ticket.findById(ticketId)
       .catch((error) => {
         error.statusCode = 500;
@@ -170,13 +194,18 @@ const getTicket = async (req, res) => {
         res.json(ticket).status(200);
       })
       .catch((error) => {
-        res.json({error: error.message}).status(error.statusCode);
+        res.json({error}).status(error.statusCode);
       });
 };
 
 const getTickets = async (req, res) => {
   const query = getTicketsQuery(req.query);
   const options = {};
+
+  if (req.error) {
+    res.json(req.error).status(req.error.statusCode);
+    return;
+  }
 
   if ((req.query.page || req.query.limit) !== undefined) {
     options.page = req.query.page || 1;
@@ -200,7 +229,7 @@ const getTickets = async (req, res) => {
         res.json(tickets).status(200);
       })
       .catch((error) => {
-        res.json({error: error.message}).status(error.statusCode);
+        res.json({error}).status(error.statusCode);
       });
   /*
       .catch((error) => {
@@ -222,6 +251,12 @@ const getTickets = async (req, res) => {
 
 const getStatTickets = async (req, res) => {
   const query = getTicketsQuery(req.query);
+
+  if (req.error) {
+    res.json(req.error).status(req.error.statusCode);
+    return;
+  }
+
   console.log(query);
   Ticket.find(query)
       .catch((error) => {

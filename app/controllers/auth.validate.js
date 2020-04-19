@@ -35,21 +35,32 @@ const isLoggedIn = async (req, res, next) => {
   if (!payload) {
     error.statusCode = 401;
     error.message = 'invalid access_token';
-    return Promise.reject(error);
+    req.error = error;
+    next();
+    return;
   }
   promisify(auth.client.get).bind(auth.client)(payload.username)
       .catch((error) => {
+        error.statusCode = 500;
+        error.message = 'error finding access_token';
+        req.error = error;
         next();
-        return Promise.reject(new Error('Unable to find access_token'));
+        return;
       })
       .then((reply) => {
         if (!reply) {
+          error.statusCode = 401;
+          error.message = 'invalid access_token';
+          req.error = error;
           next();
-          return Promise.reject(new Error('Unable to find access_token'));
+          return;
         }
         if (reply !== accessToken) {
+          error.statusCode = 401;
+          error.message = 'invalid access_token';
+          req.error = error;
           next();
-          return Promise.reject(new Error('Old access_token'));
+          return;
         }
         console.log('hooray');
         req.username = payload.username;
