@@ -9,6 +9,19 @@ router.get('/', (req, res) => {
   res.send('Parking Manager API v1.0.0');
 });
 
+router.get('/enums', (req, res) => {
+  res.json({
+    'violations': [
+      'No Tag',
+      'Expired Tag',
+    ],
+    'locations': [
+      'Garage A',
+      'Garage B',
+    ],
+  });
+});
+
 module.exports = {
   router,
 };

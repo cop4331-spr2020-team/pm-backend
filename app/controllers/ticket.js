@@ -244,6 +244,11 @@ const getStatTickets = async (req, res) => {
       });
 };
 
+const getEnums = async (req, res) => {
+  console.log(Ticket.enumValues);
+  res.status(200);
+};
+
 module.exports = {
   createTicket,
   updateTicket,
@@ -251,4 +256,5 @@ module.exports = {
   getTickets,
   getTicket,
   getStatTickets,
+  getEnums,
 };
