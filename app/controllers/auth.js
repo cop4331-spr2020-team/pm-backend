@@ -554,4 +554,6 @@ module.exports = {
   confirm,
   reset,
   changePassword,
+  client,
+  jwt,
 };
