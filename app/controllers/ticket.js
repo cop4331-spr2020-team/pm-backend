@@ -1,4 +1,6 @@
 const fs = require('fs');
+const readChunk = require('read-chunk');
+const imageType = require('image-type');
 const User = require('../models/user');
 const Ticket = require('../models/ticket');
 
@@ -83,8 +85,6 @@ const createTicket = async (req, res) => {
 
         if (req.file) {
           image = readImage(req.file.path);
-          const readChunk = require('read-chunk');
-          const imageType = require('image-type');
           const buffer = readChunk.sync(req.file.path, 0, 12);
           const imageInfo =imageType(buffer);
           ticket.image = {
@@ -110,34 +110,55 @@ const createTicket = async (req, res) => {
 };
 
 const updateTicket = async (req, res) => {
-  const ticketId = req.param.id;
+  const ticketId = req.params.ticket_id;
 
   if (req.error) {
     res.json(req.error).status(req.error.statusCode);
     return;
   }
 
-  if (req.image) {
-    req.image = readImage(req.image.path);
-  }
-
-  const update = Object.assign(req.body, req.image);
-  const opts = {
-    runValidators: true,
-  };
-
-  console.log(update);
-
-  Ticket.updateOne({_id: ticketId}, update, opts)
+  Ticket.findById(ticketId)
       .catch((error) => {
         error.statusCode = '400',
         error.message = 'Bad query parameters';
         throw error;
       })
-      .then(() => {
-        res.json({error: ''}).status(200);
+      .then((ticket) => {
+        if (!ticket) {
+          const error = new Error();
+          error.statusCode = 404;
+          error.message = 'ticket not found';
+          throw error;
+        }
+
+        Object.keys(req.body).forEach((key) => {
+          console.log(key);
+          ticket[key] = req.body[key];
+        });
+
+        console.log(ticket);
+
+        if (req.file) {
+          image = readImage(req.file.path);
+          const buffer = readChunk.sync(req.file.path, 0, 12);
+          const imageInfo =imageType(buffer);
+          ticket.image = {
+            data: image,
+            contentType: imageInfo.mime,
+          };
+        }
+
+        return ticket.save().catch((error) => {
+          error.statusCode = 400;
+          error.message = 'issue uploading image';
+          throw error;
+        });
+      })
+      .then((ticket) => {
+        res.json(ticket).status(200);
       })
       .catch((error) => {
+        console.log(error);
         res.json(error).status(error.statusCode);
       });
 };

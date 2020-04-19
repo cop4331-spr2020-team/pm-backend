@@ -18,17 +18,6 @@ router.post(
 );
 
 /**
- * Update ticket.
- */
-router.post(
-    '/:ticket_id',
-    checkLogin,
-    upload.single('image'),
-    validator.updateTicket,
-    controller.updateTicket,
-);
-
-/**
  * Get ticket information by query.
  */
 router.get(
@@ -56,6 +45,17 @@ router.get(
     checkLogin,
     validator.getTicket,
     controller.getTicket,
+);
+
+/**
+ * Update ticket.
+ */
+router.post(
+    '/:ticket_id',
+    checkLogin,
+    upload.single('image'),
+    validator.updateTicket,
+    controller.updateTicket,
 );
 
 module.exports = {
