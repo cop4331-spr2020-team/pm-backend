@@ -21,6 +21,11 @@ router.get('/enums', (req, res) => {
       'Garage B',
       'Garage C',
     ],
+    'status': [
+      'Rejected',
+      'Submitted',
+      'Completed',
+    ],
   });
 });
 
