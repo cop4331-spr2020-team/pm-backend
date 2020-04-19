@@ -45,7 +45,7 @@ function getTicketsQuery(query) {
 const createTicket = async (req, res) => {
   const {
     // eslint-disable-next-line camelcase
-    violation_type,
+    violation,
     // eslint-disable-next-line camelcase
     license_plate,
     description,
@@ -76,7 +76,7 @@ const createTicket = async (req, res) => {
         }
 
         ticket = new Ticket({
-          violationType: violation_type,
+          violationType: violation,
           licensePlate: license_plate,
           description: description,
           location: location,
@@ -222,17 +222,15 @@ const getTickets = async (req, res) => {
 
 const getStatTickets = async (req, res) => {
   const query = getTicketsQuery(req.query);
-
+  console.log(query);
   Ticket.find(query)
       .catch((error) => {
-        error.statusCode = 500;
-        error.message = 'server failure while retrieving tickets';
+        error.statusCode = 400;
+        error.message = 'Bad query syntax';
         throw error;
       })
-      .catch((tickets) => {
-        if (!tickets) {
-          return res.json([]).status(200);
-        }
+      .then((tickets) => {
+        console.log(tickets);
 
         const response = {
           total_tickets: tickets.length,
@@ -245,26 +243,31 @@ const getStatTickets = async (req, res) => {
           tickets_by_status: {
 
           },
+          min_date: new Date(8640000000000000),
+          max_date: new Date(-8640000000000000),
         };
 
-        totalNumberOfTickets.forEach((ticket) => {
-          const fun = (type, value) => {
-            if (!response[type][value]) {
-              response[type][value]=0;
-            } else {
-              response[type][value]++;
-            }
-          };
+        const fun = (type, value) => {
+          if (!response[type][value]) {
+            response[type][value]=1;
+          } else {
+            response[type][value]++;
+          }
+        };
 
+        tickets.forEach((ticket) => {
+          console.log(ticket.violationType);
           fun('tickets_by_violation', ticket.violationType);
           fun('tickets_by_location', ticket.location);
           fun('tickets_by_status', ticket.status);
+          response.min_date = Math.min(ticket.createdAt, response.min_date);
+          response.max_date = Math.max(ticket.createdAt, response.max_date);
         });
 
         res.json(response).status(200);
       })
       .catch((error) => {
-        res.json({error: error.message}).status(error.statusCode);
+        res.json(error).status(error.statusCode);
       });
 };
 

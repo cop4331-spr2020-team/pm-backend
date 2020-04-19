@@ -39,16 +39,6 @@ router.get(
 );
 
 /**
- * Get ticket information.
- */
-router.get(
-    '/:ticket_id',
-    checkLogin,
-    validator.getTicket,
-    controller.getTicket,
-);
-
-/**
  * Get ticket statistics by query.
  */
 router.get(
@@ -56,6 +46,16 @@ router.get(
     checkLogin,
     validator.getStatTickets,
     controller.getStatTickets,
+);
+
+/**
+ * Get ticket information.
+ */
+router.get(
+    '/:ticket_id',
+    checkLogin,
+    validator.getTicket,
+    controller.getTicket,
 );
 
 module.exports = {
