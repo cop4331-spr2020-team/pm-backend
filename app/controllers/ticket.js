@@ -32,18 +32,11 @@ function getTicketsQuery(query) {
   } else if (query.created_before) {
     mongooseQuery.createdAt = {$lt: new Date(Number(query.created_before))};
   }
-  if (query.day_start) {
-    // mongooseQuery['day_start'] = {},
-  }
-  if (query.day_end) {
-    // mongooseQuery['day_end'] = {},
-  }
 
   return mongooseQuery;
 }
 
 const createTicket = async (req, res) => {
-
   if (req.error) {
     res.json(req.error).status(req.error.statusCode);
     return;
@@ -225,10 +218,24 @@ const getTickets = async (req, res) => {
         throw error;
       })
       .then((tickets) => {
-        console.log(tickets);
+        if (!tickets) {
+          res.json([]).status(200);
+          return;
+        }
+        const min = Number(req.query.day_start) | 0;
+        const max = Number(req.query.day_end) | 1440;
+
+        tickets.docs = tickets.docs.filter((ticket) => {
+          let d = new Date(ticket.createdAt);
+          d = d.getHours() * 60 + d.getMinutes();
+          return d >= min && d <=max;
+        });
+
+
         res.json(tickets).status(200);
       })
       .catch((error) => {
+        console.log('error' + error);
         res.json({error}).status(error.statusCode);
       });
   /*
@@ -265,6 +272,14 @@ const getStatTickets = async (req, res) => {
         throw error;
       })
       .then((tickets) => {
+        const min = Number(req.query.day_start) | 0;
+        const max = Number(req.query.day_end) | 1440;
+
+        tickets = tickets.filter((ticket) => {
+          let d = new Date(ticket.createdAt);
+          d = d.getHours() * 60 + d.getMinutes();
+          return d >= min && d <=max;
+        });
         console.log(tickets);
 
         const response = {
@@ -302,6 +317,7 @@ const getStatTickets = async (req, res) => {
         res.json(response).status(200);
       })
       .catch((error) => {
+        console.log(error);
         res.json(error).status(error.statusCode);
       });
 };
