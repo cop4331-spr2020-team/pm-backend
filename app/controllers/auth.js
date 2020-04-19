@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const Token = require('../models/token');
 const sgMail = require('@sendgrid/mail');
+const isLoggedIn = require('../controllers/auth.validate').isLoggedIn;
 const promisify = require('util').promisify;
 
 const expiry = Number(process.env.EXPIRY);
@@ -507,29 +508,36 @@ const changePassword = async (req, res) => {
           res.json({error: err.message}).status(err.statusCode);
         });
   } else if (accessToken) {
-    const payload = jwt.decode(accessToken);
-    User.findOne({username: payload.username})
-        .then((user) => {
-          if (!user) {
-            const error = new Error();
-            error.statusCode = 409;
-            error.message = 'user for this token not found';
+    isLoggedIn(req, res, () => {
 
-            throw error;
-          }
+      if (req.error) {
+        res.send(req.error).status(req.error.statusCode);
+        return;
+      }
 
-          return changePasswordImpl(user, newPassword).catch((error) => {
-            error.statusCode = 500;
-            error.message = 'server failure during update user\'s password';
-            throw error;
+      User.findOne({username: payload.username})
+          .then((user) => {
+            if (!user) {
+              const error = new Error();
+              error.statusCode = 409;
+              error.message = 'user for this token not found';
+
+              throw error;
+            }
+
+            return changePasswordImpl(user, newPassword).catch((error) => {
+              error.statusCode = 500;
+              error.message = 'server failure during update user\'s password';
+              throw error;
+            });
+          })
+          .then((user) => {
+            res.status(200).error({error: ''});
+          })
+          .catch((err) => {
+            res.json({error: err.message}).status(err.statusCode);
           });
-        })
-        .then((user) => {
-          res.status(200).error({error: ''});
-        })
-        .catch((err) => {
-          res.json({error: err.message}).status(err.statusCode);
-        });
+    });
   }
 };
 
