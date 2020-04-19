@@ -37,6 +37,9 @@ function getTicketsQuery(query) {
 }
 
 const createTicket = async (req, res) => {
+
+  console.log(req);
+
   if (req.error) {
     res.json(req.error).status(req.error.statusCode);
     return;
@@ -52,11 +55,6 @@ const createTicket = async (req, res) => {
     // eslint-disable-next-line camelcase
     additional_comments,
   } = req.body;
-
-  let image = '';
-  if (req.image) {
-    image = readImage(req.image.path);
-  }
 
   const username = req.username;
   console.log(req.username);
@@ -80,9 +78,20 @@ const createTicket = async (req, res) => {
           description: description,
           location: location,
           additionalComments: additional_comments,
-          image: image,
           _userId: user._id,
         });
+
+        if (req.file) {
+          image = readImage(req.file.path);
+          const readChunk = require('read-chunk');
+          const imageType = require('image-type');
+          const buffer = readChunk.sync(req.file.path, 0, 12);
+          const imageInfo =imageType(buffer);
+          ticket.image = {
+            data: image,
+            contentType: imageInfo.mime,
+          };
+        }
 
         return ticket.save()
             .catch((error) => {

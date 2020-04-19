@@ -10,7 +10,7 @@ const ticketSchema = new Schema({
   location: {type: String, enum: ['Garage A', 'Garage B', 'Garage C']},
   additionalComments: {type: String},
   status: {type: String, enum: ['Rejected', 'Submitted', 'Completed'], default: 'Submitted'},
-  image: {type: Buffer},
+  image: {data: Buffer, contentType: String},
 }, {timestamps: {createdAt: 'createdAt', updatedAt: 'updatedAt'}});
 
 ticketSchema.plugin(mongoosePaginate);

@@ -1,6 +1,10 @@
 const express = require('express');
 const router = new express.Router();
 
+router.get('/upload', (req, res) => {
+  res.send(``).status(200);
+});
+
 router.get('/', (req, res) => {
   console.log(req.query);
   const token = req.query.token;
