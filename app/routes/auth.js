@@ -44,6 +44,12 @@ router.get(
     controller.getUserInfo,
 );
 
+router.get(
+    '/user_info/:user_id',
+    validate.isLoggedIn,
+    controller.getUserInfoById,
+);
+
 module.exports = {
   router,
 };

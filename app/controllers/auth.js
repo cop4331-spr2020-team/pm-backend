@@ -570,6 +570,41 @@ const getUserInfo = async (req, res) => {
       });
 };
 
+const getUserInfoById = async (req, res) => {
+  if (req.error) {
+    res.json(req.error).status(req.error.statusCode);
+    return;
+  }
+
+  User.findById(req.params.user_id)
+      .catch((error) => {
+        error.statusCode = 500;
+        error.message = 'server failure during finding user';
+        throw error;
+      })
+      .then((user) => {
+        if (!user) {
+          const error = new Error();
+          error.statusCode = 404;
+          error.message = 'unable to find user';
+          throw error;
+        }
+
+        const response = {
+          userId: user._id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          username: user.username,
+        };
+
+        res.json(response).status(200);
+      })
+      .catch((error) => {
+        res.json(error).status(error.statusCode);
+      });
+};
+
 /**
  * Changes password for user.
  * @param {User} user - user defined schema
@@ -592,6 +627,7 @@ module.exports = {
   reset,
   changePassword,
   getUserInfo,
+  getUserInfoById,
   client,
   jwt,
 };
