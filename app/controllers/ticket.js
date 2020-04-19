@@ -18,19 +18,19 @@ function readImage(imagePath) {
  */
 function getTicketsQuery(query) {
   const mongooseQuery = {};
-
+  console.log(query);
   if (query.user_ids) {
-    mongooseQuery._ids = {$in: query.user_ids};
+    mongooseQuery._userId = {$in: JSON.parse(query.user_ids)};
   }
   if (query.created_after && query.created_before) {
     mongooseQuery.createdAt = {
-      $gte: new Date(created_after),
-      $lt: new Date(created_before),
+      $gte: new Date(query.created_after),
+      $lt: new Date(query.created_before),
     };
   } else if (query.created_after) {
-    mongooseQuery.createdAt = {$gte: new Date(created_after)};
+    mongooseQuery.createdAt = {$gte: new Date(query.created_after)};
   } else if (query.created_before) {
-    mongooseQuery.createdAt = {$lt: new Date(created_after)};
+    mongooseQuery.createdAt = {$lt: new Date(query.created_after)};
   }
   if (query.day_start) {
     // mongooseQuery['day_start'] = {},
@@ -157,6 +157,7 @@ const getTicket = async (req, res) => {
       .catch((error) => {
         error.statusCode = 500;
         error.message = 'server failure while finding ticket';
+        console.log(error);
         throw error;
       })
       .then((ticket) => {
@@ -175,25 +176,48 @@ const getTicket = async (req, res) => {
 
 const getTickets = async (req, res) => {
   const query = getTicketsQuery(req.query);
+  const options = {};
 
-  const options = {
-    paginate: !req.query.page && !req.query.limit,
-    page: req.query.page || 1,
-    limit: req.query.limit || 10,
-  };
+  if ((req.query.page || req.query.limit) !== undefined) {
+    options.page = req.query.page || 1;
+    options.limit = req.query.limit || 10;
+  } else {
+    options.paginate = false;
+  }
 
+  console.log(query);
+  console.log(options);
+
+  // For whatever reason, promises where not working.
   Ticket.paginate(query, options)
       .catch((error) => {
         error.statusCode = 500;
-        error.message = 'server failure while retrieving tickets';
+        error.message = 'server failure during find';
         throw error;
       })
-      .catch((tickets) => {
+      .then((tickets) => {
+        console.log(tickets);
         res.json(tickets).status(200);
       })
       .catch((error) => {
         res.json({error: error.message}).status(error.statusCode);
       });
+  /*
+      .catch((error) => {
+        console.log(error);
+        error.statusCode = 500;
+        error.message = 'server failure while retrieving tickets';
+        throw error;
+      })
+      .catch((tickets) => {
+        console.log(tickets);
+        res.json(tickets).status(200);
+      })
+      .catch((error) => {
+        console.log(error);
+        res.json({error: error.message}).status(error.statusCode);
+      });
+  */
 };
 
 const getStatTickets = async (req, res) => {

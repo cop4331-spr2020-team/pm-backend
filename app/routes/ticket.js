@@ -29,6 +29,16 @@ router.post(
 );
 
 /**
+ * Get ticket information by query.
+ */
+router.get(
+    '/query',
+    checkLogin,
+    validator.getTickets,
+    controller.getTickets,
+);
+
+/**
  * Get ticket information.
  */
 router.get(
@@ -36,16 +46,6 @@ router.get(
     checkLogin,
     validator.getTicket,
     controller.getTicket,
-);
-
-/**
- * Get ticket information by query.
- */
-router.get(
-    '/',
-    checkLogin,
-    validator.getTickets,
-    controller.getTickets,
 );
 
 /**

@@ -31,6 +31,12 @@ const signup = [
 const isLoggedIn = async (req, res, next) => {
   const accessToken = req.cookies.access_token;
   const payload = auth.jwt.decode(accessToken);
+  const error = new Error();
+  if (!payload) {
+    error.statusCode = 401;
+    error.message = 'invalid access_token';
+    return Promise.reject(error);
+  }
   promisify(auth.client.get).bind(auth.client)(payload.username)
       .catch((error) => {
         next();

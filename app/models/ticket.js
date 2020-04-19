@@ -11,7 +11,7 @@ const ticketSchema = new Schema({
   additionalComments: {type: String},
   status: {type: String, enum: ['Rejected', 'Submitted', 'Completed'], default: 'Submitted'},
   image: {type: Buffer},
-}, {timestamps: {createdAt: 'created_at', updatedAt: 'updatedAt'}});
+}, {timestamps: {createdAt: 'createdAt', updatedAt: 'updatedAt'}});
 
 ticketSchema.plugin(mongoosePaginate);
 
