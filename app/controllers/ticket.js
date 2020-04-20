@@ -86,11 +86,12 @@ const createTicket = async (req, res) => {
         }
 
         ticket = new Ticket({
-          violationType: violation,
-          licensePlate: license_plate,
+          ticketor_name: user.first_name + ' ' + user.last_name,
+          violation_type: violation,
+          license_plate: license_plate,
           description: description,
           location: location,
-          additionalComments: additional_comments,
+          additional_comments: additional_comments,
           _userId: user._id,
         });
 
@@ -105,7 +106,7 @@ const createTicket = async (req, res) => {
                 console.log(fileInfo);
                 ticket.image = {};
                 ticket.image.data = image;
-                ticket.image.contentType = fileInfo.mime;
+                ticket.image.content_type = fileInfo.mime;
                 return ticket.save()
                     .catch((error) => {
                       error.statusCode = 500;
@@ -164,7 +165,7 @@ const updateTicket = async (req, res) => {
           const mimeInfo = fileType(Buffer.from(image, 'base64'));
           ticket.image = {};
           ticket.image.data = image;
-          ticket.image.contentType = mimeInfo.mime;
+          ticket.image.content_type = mimeInfo.mime;
         }
 
         return ticket.save().catch((error) => {
