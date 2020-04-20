@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 
 const ticketSchema = new Schema({
   _userId: {type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User'},
-  violation_type: {type: String, enum: ['Expired Tag', 'No Tag', 'Improper Parking']},
+  violation: {type: String, enum: ['Expired Tag', 'No Tag', 'Improper Parking']},
   license_plate: {type: String},
   description: {type: String},
   location: {type: String, enum: ['Garage A', 'Garage B', 'Garage C']},

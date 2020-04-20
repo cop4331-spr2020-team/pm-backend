@@ -87,7 +87,7 @@ const createTicket = async (req, res) => {
 
         ticket = new Ticket({
           ticketor_name: user.first_name + ' ' + user.last_name,
-          violation_type: violation,
+          violation: violation,
           license_plate: license_plate,
           description: description,
           location: location,
@@ -252,7 +252,7 @@ const getTickets = async (req, res) => {
 
   const options = {};
 
-  if (req.error) {
+  if (!req.error) {
     res.json(req.error).status(req.error.statusCode || 500);
     return;
   }
