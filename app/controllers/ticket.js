@@ -246,7 +246,7 @@ const getTickets = async (req, res) => {
   try {
     query = getTicketsQuery(req.query);
   } catch (e) {
-    res.json({error: 'invalid input', error_message: e}).status(404);
+    res.json({error: 'invalid input', error_message: e}).status(400);
     return;
   }
 
@@ -318,7 +318,7 @@ const getStatTickets = async (req, res) => {
   try {
     query = getTicketsQuery(req.query);
   } catch (e) {
-    res.json({error: 'invalid input', error_message: e}).status(404);
+    res.json({error: 'invalid input', error_message: e}).status(400);
     return;
   }
 
