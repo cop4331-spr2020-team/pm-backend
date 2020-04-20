@@ -252,7 +252,7 @@ const getTickets = async (req, res) => {
 
   const options = {};
 
-  if (!req.error) {
+  if (req.error) {
     res.json(req.error).status(req.error.statusCode || 500);
     return;
   }
