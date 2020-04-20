@@ -158,13 +158,15 @@ const updateTicket = async (req, res) => {
 
         Object.keys(req.body).forEach((key) => {
           console.log(key);
-          ticket[key] = req.body[key];
+          if (key !== 'image') {
+            ticket[key] = req.body[key];
+          }
         });
 
         if (req.body.image) {
-          const mimeInfo = fileType(Buffer.from(image, 'base64'));
+          const mimeInfo = fileType.fromBuffer(Buffer.from(req.body.image, 'base64'));
           ticket.image = {};
-          ticket.image.data = image;
+          ticket.image.data = req.body.image;
           ticket.image.content_type = mimeInfo.mime;
         }
 
