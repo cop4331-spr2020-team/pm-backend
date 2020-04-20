@@ -242,7 +242,14 @@ const getTicket = async (req, res) => {
 };
 
 const getTickets = async (req, res) => {
-  const query = getTicketsQuery(req.query);
+  let query = '';
+  try {
+    query = getTicketsQuery(req.query);
+  } catch (e) {
+    res.json({error: 'invalid input', error_message: e}).status(404);
+    return;
+  }
+
   const options = {};
 
   if (req.error) {
@@ -307,7 +314,13 @@ const getTickets = async (req, res) => {
 };
 
 const getStatTickets = async (req, res) => {
-  const query = getTicketsQuery(req.query);
+  let query = '';
+  try {
+    query = getTicketsQuery(req.query);
+  } catch (e) {
+    res.json({error: 'invalid input', error_message: e}).status(404);
+    return;
+  }
 
   if (req.error) {
     res.json(req.error).status(req.error.statusCode || 500);
