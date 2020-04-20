@@ -1,6 +1,5 @@
 const fs = require('fs');
-const readChunk = require('read-chunk');
-const imageType = require('image-type');
+const fileType = require('file-type');
 const User = require('../models/user');
 const Ticket = require('../models/ticket');
 
@@ -54,7 +53,7 @@ const createTicket = async (req, res) => {
   console.log(req);
 
   if (req.error) {
-    res.json(req.error).status(req.error.statusCode);
+    res.json(req.error).status(req.error.statusCode || 500);
     return;
   }
 
@@ -67,6 +66,7 @@ const createTicket = async (req, res) => {
     location,
     // eslint-disable-next-line camelcase
     additional_comments,
+    image,
   } = req.body;
 
   const username = req.username;
@@ -94,29 +94,42 @@ const createTicket = async (req, res) => {
           _userId: user._id,
         });
 
-        if (req.file) {
-          image = readImage(req.file.path);
-          const buffer = readChunk.sync(req.file.path, 0, 12);
-          const imageInfo =imageType(buffer);
-          ticket.image = {
-            data: image,
-            contentType: imageInfo.mime,
-          };
+        if (image) {
+          return fileType.fromBuffer((Buffer.from(image, 'base64')))
+              .catch((error) => {
+                error.statusCode = 404;
+                error.message = 'unable to parse image type';
+                throw error;
+              })
+              .then((fileInfo) => {
+                console.log(fileInfo);
+                ticket.image = {};
+                ticket.image.data = image;
+                ticket.image.contentType = fileInfo.mime;
+                return ticket.save()
+                    .catch((error) => {
+                      error.statusCode = 500;
+                      error.message = 'Unable to store ticket';
+                      console.log(error);
+                      throw error;
+                    });
+              });
+        } else {
+          return ticket.save()
+              .catch((error) => {
+                error.statusCode = 500;
+                error.message = 'Unable to store ticket';
+                console.log(error);
+                throw error;
+              });
         }
-
-        return ticket.save()
-            .catch((error) => {
-              error.statusCode = 500;
-              error.message = 'Unable to store ticket';
-              console.log(error);
-              throw error;
-            });
       })
       .then((ticket) => {
         res.json({ticket_id: ticket._id, error: ''}).status(200);
       })
       .catch((error) => {
-        res.json({error}).status(error.statusCode);
+        console.log(error);
+        res.json({error}).status(error.statusCode || 500);
       });
 };
 
@@ -124,7 +137,7 @@ const updateTicket = async (req, res) => {
   const ticketId = req.params.ticket_id;
 
   if (req.error) {
-    res.json(req.error).status(req.error.statusCode);
+    res.json(req.error).status(req.error.statusCode || 500);
     return;
   }
 
@@ -147,16 +160,11 @@ const updateTicket = async (req, res) => {
           ticket[key] = req.body[key];
         });
 
-        if (req.file) {
-          const image = base64_encode(req.file.path);
-          const buffer = readChunk.sync(req.file.path, 0, 12);
-          const imageInfo = imageType(buffer);
-          console.log('test');
-          console.log(image);
-          ticket.image = {
-            data: image,
-            contentType: imageInfo.mime,
-          };
+        if (req.body.image) {
+          const mimeInfo = fileType(Buffer.from(image, 'base64'));
+          ticket.image = {};
+          ticket.image.data = image;
+          ticket.image.contentType = mimeInfo.mime;
         }
 
         return ticket.save().catch((error) => {
@@ -170,7 +178,7 @@ const updateTicket = async (req, res) => {
       })
       .catch((error) => {
         console.log(error);
-        res.json(error).status(error.statusCode);
+        res.json(error).status(error.statusCode || 500);
       });
 };
 
@@ -178,7 +186,7 @@ const removeTicket = async (req, res) => {
   const ticketId = req.param.id;
 
   if (req.error) {
-    res.json(req.error).status(req.error.statusCode);
+    res.json(req.error).status(req.error.statusCode || 500);
     return;
   }
 
@@ -199,7 +207,7 @@ const removeTicket = async (req, res) => {
         res.json({error: ''}).status(200);
       })
       .catch((error) => {
-        res.json({error}).status(error.statusCode);
+        res.json({error}).status(error.statusCode || 500);
       });
 };
 
@@ -207,7 +215,7 @@ const getTicket = async (req, res) => {
   const ticketId = req.params.ticket_id;
 
   if (req.error) {
-    res.json(req.error).status(req.error.statusCode);
+    res.json(req.error).status(req.error.statusCode || 500);
     return;
   }
 
@@ -228,7 +236,7 @@ const getTicket = async (req, res) => {
         res.json(ticket).status(200);
       })
       .catch((error) => {
-        res.json({error}).status(error.statusCode);
+        res.json({error}).status(error.statusCode || 500);
       });
 };
 
@@ -237,7 +245,7 @@ const getTickets = async (req, res) => {
   const options = {};
 
   if (req.error) {
-    res.json(req.error).status(req.error.statusCode);
+    res.json(req.error).status(req.error.statusCode || 500);
     return;
   }
 
@@ -277,7 +285,7 @@ const getTickets = async (req, res) => {
       })
       .catch((error) => {
         console.log('error' + error);
-        res.json({error}).status(error.statusCode);
+        res.json({error}).status(error.statusCode || 500);
       });
   /*
       .catch((error) => {
@@ -301,7 +309,7 @@ const getStatTickets = async (req, res) => {
   const query = getTicketsQuery(req.query);
 
   if (req.error) {
-    res.json(req.error).status(req.error.statusCode);
+    res.json(req.error).status(req.error.statusCode || 500);
     return;
   }
 
@@ -359,7 +367,7 @@ const getStatTickets = async (req, res) => {
       })
       .catch((error) => {
         console.log(error);
-        res.json(error).status(error.statusCode);
+        res.json(error).status(error.statusCode || 500);
       });
 };
 
