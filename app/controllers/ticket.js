@@ -369,8 +369,8 @@ const getStatTickets = async (req, res) => {
         };
 
         tickets.forEach((ticket) => {
-          console.log(ticket.violationType);
-          fun('tickets_by_violation', ticket.violationType);
+          console.log(ticket.violation);
+          fun('tickets_by_violation', ticket.violation);
           fun('tickets_by_location', ticket.location);
           fun('tickets_by_status', ticket.status);
           response.min_date = Math.min(ticket.createdAt, response.min_date);
