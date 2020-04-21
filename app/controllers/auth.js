@@ -6,6 +6,7 @@ const User = require('../models/user');
 const Token = require('../models/token');
 const sgMail = require('@sendgrid/mail');
 const promisify = require('util').promisify;
+const verification = require('./auth.validate');
 
 const expiry = Number(process.env.EXPIRY);
 const jwtKey = process.env.JWT_KEY;
@@ -507,7 +508,7 @@ const changePassword = async (req, res) => {
           res.json({error: err.message}).status(err.statusCode);
         });
   } else if (accessToken) {
-    isLoggedIn(req, res, () => {
+    verification.isLoggedIn(req, res, () => {
       if (req.error) {
         res.send(req.error).status(req.error.statusCode);
         return;
