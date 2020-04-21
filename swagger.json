@@ -1,0 +1,1168 @@
+{
+    "openapi" : "3.0.0",
+    "info" : {
+      "title" : "Authentication API",
+      "description" : "Parking Manager Backend API",
+      "version" : "1.0.0"
+    },
+    "servers" : [ {
+      "url" : "https://virtserver.swaggerhub.com/cop4331-team-project/ticket/1.0.0",
+      "description" : "SwaggerHub API Auto Mocking"
+    }, {
+      "url" : "https://virtserver.swaggerhub.com/cop4331-team-project/parking-manager/1.0.0",
+      "description" : "SwaggerHub API Auto Mocking"
+    } ],
+    "tags" : [ {
+      "name" : "clients",
+      "description" : "Authentication calls by clients."
+    } ],
+    "paths" : {
+      "/auth/user_info/{user_id}" : {
+        "get" : {
+          "tags" : [ "clients" ],
+          "summary" : "Get information about some other user",
+          "parameters" : [ {
+            "name" : "access_token",
+            "in" : "cookie",
+            "description" : "client's access_token cookie that was previously returned by /login",
+            "required" : true,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }, {
+            "name" : "user_id",
+            "in" : "path",
+            "description" : "Id for user to lookup",
+            "required" : true,
+            "style" : "simple",
+            "explode" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          } ],
+          "responses" : {
+            "200" : {
+              "description" : "Return information about specified user.\n",
+              "content" : {
+                "application/json" : {
+                  "schema" : {
+                    "$ref" : "#/components/schemas/inline_response_200"
+                  }
+                }
+              }
+            },
+            "401" : {
+              "description" : "Invalid access_token, cannot login, must relogin.\n"
+            }
+          }
+        }
+      },
+      "/auth/user_info" : {
+        "get" : {
+          "tags" : [ "clients" ],
+          "summary" : "Get's information about logged in user",
+          "parameters" : [ {
+            "name" : "access_token",
+            "in" : "cookie",
+            "description" : "client's access_token cookie that was previously returned by /login",
+            "required" : true,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          } ],
+          "responses" : {
+            "200" : {
+              "description" : "Return information about this user.\n",
+              "content" : {
+                "application/json" : {
+                  "schema" : {
+                    "$ref" : "#/components/schemas/inline_response_200"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/auth/login" : {
+        "post" : {
+          "tags" : [ "clients" ],
+          "summary" : "Logs in and returns the authentication access_token cookie",
+          "requestBody" : {
+            "description" : "A JSON object containing the login and password in plaintext.\n",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LoginRequest"
+                }
+              }
+            },
+            "required" : true
+          },
+          "responses" : {
+            "200" : {
+              "description" : "Succesfully authenticated.\nThe access_token token is returned in a cookie named 'access_token'.\nMust be included in subsequent API calls.\n",
+              "headers" : {
+                "Set-Cookie" : {
+                  "style" : "simple",
+                  "explode" : false,
+                  "schema" : {
+                    "type" : "string",
+                    "example" : "access_token=xxxxx.yyyyy.zzzzz; Path=/; HttpOnly"
+                  }
+                }
+              }
+            },
+            "401" : {
+              "description" : "Log in unsuccesful.\nNothing is returned, except 401 status code.\n"
+            },
+            "403" : {
+              "description" : "Client has not confirmed account.\n"
+            }
+          },
+          "security" : [ ]
+        }
+      },
+      "/auth/logout" : {
+        "post" : {
+          "tags" : [ "clients" ],
+          "summary" : "Logout client and invalidate access_token",
+          "description" : "By calling with a user's authentication access_token, it will invalidate \ntoken, effectively logging them out.\n",
+          "parameters" : [ {
+            "name" : "access_token",
+            "in" : "cookie",
+            "description" : "client's access_token cookie that was previously returned by /login",
+            "required" : true,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          } ],
+          "responses" : {
+            "200" : {
+              "description" : "Succesfully logged out.\nThe client is unauthenticated, the previus cookie access_token \nis invalidated, and removed.\n",
+              "headers" : {
+                "Set-Cookie" : {
+                  "style" : "simple",
+                  "explode" : false,
+                  "schema" : {
+                    "type" : "string",
+                    "example" : "access_token=; Path=/; HttpOnly"
+                  }
+                }
+              }
+            },
+            "400" : {
+              "description" : "user token was not found"
+            },
+            "401" : {
+              "description" : "user was not authenticated, not logged out"
+            }
+          }
+        }
+      },
+      "/auth/signup" : {
+        "post" : {
+          "tags" : [ "clients" ],
+          "summary" : "Sign up client, awaiting registration",
+          "requestBody" : {
+            "description" : "A JSON object containing information required for signup.\nSee the SignUpRequest schema for more information for fields.\n",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SignUpRequest"
+                }
+              }
+            },
+            "required" : true
+          },
+          "responses" : {
+            "200" : {
+              "description" : "Succesful sign up.\n"
+            },
+            "400" : {
+              "description" : "Invalid syntax for values for username, email, or password.\nThis is thrown when email or usernames are unique, but they are not\nvalid (does not match rules for username/email/password).\nFurthermore, iff passwords do not match, password_confirmation\nwill be set to false.\n",
+              "content" : {
+                "application/json" : {
+                  "schema" : {
+                    "$ref" : "#/components/schemas/inline_response_400"
+                  }
+                }
+              }
+            },
+            "409" : {
+              "description" : "Either the email or username is not unique.\n",
+              "content" : {
+                "application/json" : {
+                  "schema" : {
+                    "$ref" : "#/components/schemas/inline_response_409"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/auth/signup/confirm" : {
+        "post" : {
+          "tags" : [ "clients" ],
+          "summary" : "Confirm client signup",
+          "requestBody" : {
+            "description" : "A JSON object containing the client's id for the user.\n",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConfirmRequest"
+                }
+              }
+            },
+            "required" : true
+          },
+          "responses" : {
+            "200" : {
+              "description" : "user verification succeeded"
+            },
+            "400" : {
+              "description" : "invalid email / token combination. token could have expired\nor the email does match the combination.\n"
+            }
+          }
+        }
+      },
+      "/auth/reset" : {
+        "post" : {
+          "tags" : [ "clients" ],
+          "summary" : "Reset client password",
+          "requestBody" : {
+            "description" : "A JSON object containing the email for the user.\nA email will then be sent for password reset.\n",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResetRequest"
+                }
+              }
+            },
+            "required" : true
+          },
+          "responses" : {
+            "200" : {
+              "description" : "Always return success. This does not signify the call was succesful,\nbut an attempt was made.\n"
+            }
+          }
+        }
+      },
+      "/auth/change_password" : {
+        "post" : {
+          "tags" : [ "clients" ],
+          "summary" : "Update client password",
+          "parameters" : [ {
+            "name" : "access_token",
+            "in" : "cookie",
+            "description" : "client's access_token that was previously returned by /login",
+            "required" : true,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          } ],
+          "requestBody" : {
+            "description" : "A JSON object containing the username, new password,\nand either the old password, or a reset token.\n",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ChangePasswordRequest"
+                }
+              }
+            },
+            "required" : true
+          },
+          "responses" : {
+            "200" : {
+              "description" : "Succesful change of password.\n"
+            },
+            "400" : {
+              "description" : "Ocurs when either username is not found, old_password does not match,\nnew_password is invalid, or reset token is invalid.\n",
+              "content" : {
+                "application/json" : {
+                  "schema" : {
+                    "$ref" : "#/components/schemas/inline_response_400_1"
+                  }
+                }
+              }
+            },
+            "401" : {
+              "description" : "Invalid access_token. Expired token or user is not logged in.\n"
+            },
+            "403" : {
+              "description" : "This user does not have authority to modify this account's password.\n"
+            }
+          }
+        }
+      },
+      "/enums" : {
+        "get" : {
+          "tags" : [ "clients" ],
+          "summary" : "Returns enumeration types for certain fields",
+          "responses" : {
+            "200" : {
+              "description" : "Returns JSON object with default types for several fields\n",
+              "content" : {
+                "application/json" : {
+                  "schema" : {
+                    "$ref" : "#/components/schemas/inline_response_200_1"
+                  }
+                }
+              }
+            },
+            "500" : {
+              "description" : "Internal server error. Just try again.\n"
+            }
+          }
+        }
+      },
+      "/tickets/create" : {
+        "post" : {
+          "tags" : [ "clients" ],
+          "summary" : "Creates a ticket",
+          "parameters" : [ {
+            "name" : "access_token",
+            "in" : "cookie",
+            "description" : "client's access_token that was previously returned by /login",
+            "required" : true,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          } ],
+          "requestBody" : {
+            "description" : "A multipart object containing the information for a ticket.\n",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TicketCreateRequest"
+                }
+              }
+            },
+            "required" : true
+          },
+          "responses" : {
+            "200" : {
+              "description" : "Succesfully created ticket. Returns id for ticket.\n",
+              "content" : {
+                "application/json" : {
+                  "schema" : {
+                    "$ref" : "#/components/schemas/inline_response_200_2"
+                  }
+                }
+              }
+            },
+            "401" : {
+              "description" : "Log in unsuccesful.\nNothing is returned, except 401 status code.\n"
+            },
+            "403" : {
+              "description" : "Client has not confirmed account.\n"
+            },
+            "500" : {
+              "description" : "internal server error, unable to create ticket.\n"
+            }
+          },
+          "security" : [ ]
+        }
+      },
+      "/tickets/{ticket_id}" : {
+        "get" : {
+          "tags" : [ "clients" ],
+          "parameters" : [ {
+            "name" : "access_token",
+            "in" : "cookie",
+            "description" : "client's access_token cookie that was previously returned by /login",
+            "required" : true,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }, {
+            "name" : "ticket_id",
+            "in" : "path",
+            "description" : "ticket id returned from database",
+            "required" : true,
+            "style" : "simple",
+            "explode" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          } ],
+          "responses" : {
+            "200" : {
+              "description" : "Returns ticket information",
+              "content" : {
+                "application/json" : {
+                  "schema" : {
+                    "$ref" : "#/components/schemas/DatabaseTicket"
+                  }
+                }
+              }
+            },
+            "401" : {
+              "description" : "Log in unsuccesful.\nNothing is returned, except 401 status code.\n"
+            },
+            "403" : {
+              "description" : "Client has not confimed account\n"
+            },
+            "404" : {
+              "description" : "Ticket not found\n"
+            },
+            "500" : {
+              "description" : "Interval server error\n"
+            }
+          }
+        },
+        "post" : {
+          "tags" : [ "clients" ],
+          "summary" : "Update ticket",
+          "description" : "Update any field in a ticket by adding field to body.\n",
+          "parameters" : [ {
+            "name" : "access_token",
+            "in" : "cookie",
+            "description" : "client's access_token cookie that was previously returned by /login",
+            "required" : true,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }, {
+            "name" : "ticket_id",
+            "in" : "path",
+            "description" : "ticket id returned from database",
+            "required" : true,
+            "style" : "simple",
+            "explode" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          } ],
+          "requestBody" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UpdateTicketRequest"
+                }
+              }
+            }
+          },
+          "responses" : {
+            "200" : {
+              "description" : "Succesfully updated ticket."
+            },
+            "401" : {
+              "description" : "Log in unsuccesful.\nNothing is returned, except 401 status code.\n"
+            },
+            "403" : {
+              "description" : "Client has not confirmed account.\n"
+            },
+            "404" : {
+              "description" : "Ticket not found.\n"
+            },
+            "500" : {
+              "description" : "Unable to update due to server error.\n"
+            }
+          }
+        }
+      },
+      "/tickets/query" : {
+        "get" : {
+          "tags" : [ "clients" ],
+          "summary" : "Grabs all tickets with filters",
+          "description" : "Supply query parameters to limit amount and which tickets\nto return.\n",
+          "parameters" : [ {
+            "name" : "user_ids",
+            "in" : "query",
+            "description" : "One or more ids\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string",
+                "example" : "[\"ff123343445vc\",\"asdfd2333\"]"
+              }
+            },
+            "examples" : {
+              "oneId" : {
+                "summary" : "Example of a single ID",
+                "value" : [ "adsfdfbbc23433" ]
+              },
+              "multipleIds" : {
+                "summary" : "Example of multiple IDs",
+                "value" : [ "asdf4234", "svdg41234", "bfdf3434" ]
+              }
+            }
+          }, {
+            "name" : "created_after",
+            "in" : "query",
+            "description" : "Get all tickets after specified date in milliseconds.\nRefer here for time -> https://stackoverflow.com/questions/358207/iphone-how-to-get-current-milliseconds\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "integer",
+              "example" : 1587272673916
+            }
+          }, {
+            "name" : "created_before",
+            "in" : "query",
+            "description" : "Get all tickets before specified date in milliseconds.\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "integer",
+              "example" : 1587272673916
+            }
+          }, {
+            "name" : "page",
+            "in" : "query",
+            "description" : "Paginated results return at specified page. Combines with limit.\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "integer",
+              "example" : 1
+            }
+          }, {
+            "name" : "limit",
+            "in" : "query",
+            "description" : "Paginated resuls return with specified limit. Combines with limit.\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "integer",
+              "example" : 10
+            }
+          }, {
+            "name" : "day_start",
+            "in" : "query",
+            "description" : "All tickets that start at this time during the day, in minutes\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "integer",
+              "example" : 480
+            }
+          }, {
+            "name" : "day_end",
+            "in" : "query",
+            "description" : "All tickets that end at this time during the day, in minutes\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "integer",
+              "example" : 600
+            }
+          } ],
+          "responses" : {
+            "200" : {
+              "description" : "Returns all tickets and their information",
+              "content" : {
+                "application/json" : {
+                  "schema" : {
+                    "$ref" : "#/components/schemas/inline_response_200_3"
+                  }
+                }
+              }
+            },
+            "400" : {
+              "description" : "invalid query inputs\n"
+            },
+            "401" : {
+              "description" : "Log in unsuccesful.\nNothing is returned, except 401 status code.\n"
+            },
+            "403" : {
+              "description" : "Client has not confirmed account.\n"
+            },
+            "404" : {
+              "description" : "Ticket not found.\n"
+            },
+            "500" : {
+              "description" : "Unable to update due to server error.\n"
+            }
+          }
+        }
+      },
+      "/tickets/stats" : {
+        "get" : {
+          "tags" : [ "clients" ],
+          "summary" : "Grabs all tickets with filters",
+          "description" : "Supply query parameters to limit amount and which tickets\nto return.\n",
+          "parameters" : [ {
+            "name" : "user_ids",
+            "in" : "query",
+            "description" : "One or more ids\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string",
+                "example" : "[\"ff123343445vc\",\"asdfd2333\"]"
+              }
+            },
+            "examples" : {
+              "oneId" : {
+                "summary" : "Example of a single ID",
+                "value" : [ "adsfdfbbc23433" ]
+              },
+              "multipleIds" : {
+                "summary" : "Example of multiple IDs",
+                "value" : [ "asdf4234", "svdg41234", "bfdf3434" ]
+              }
+            }
+          }, {
+            "name" : "created_after",
+            "in" : "query",
+            "description" : "Get all tickets after specified date in milliseconds.\nRefer here for time -> https://stackoverflow.com/questions/358207/iphone-how-to-get-current-milliseconds\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "integer",
+              "example" : 1587272673916
+            }
+          }, {
+            "name" : "created_before",
+            "in" : "query",
+            "description" : "Get all tickets before specified date in milliseconds.\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "integer",
+              "example" : 1587272673916
+            }
+          }, {
+            "name" : "page",
+            "in" : "query",
+            "description" : "Paginated results return at specified page. Combines with limit.\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "integer",
+              "example" : 1
+            }
+          }, {
+            "name" : "limit",
+            "in" : "query",
+            "description" : "Paginated resuls return with specified limit. Combines with limit.\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "integer",
+              "example" : 10
+            }
+          }, {
+            "name" : "day_start",
+            "in" : "query",
+            "description" : "All tickets that start at this time during the day, in minutes\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "integer",
+              "example" : 480
+            }
+          }, {
+            "name" : "day_end",
+            "in" : "query",
+            "description" : "All tickets that end at this time during the day, in minutes\n",
+            "required" : false,
+            "style" : "form",
+            "explode" : true,
+            "schema" : {
+              "type" : "integer",
+              "example" : 600
+            }
+          } ],
+          "responses" : {
+            "200" : {
+              "description" : "Returns all tickets and their information",
+              "content" : {
+                "application/json" : {
+                  "schema" : {
+                    "$ref" : "#/components/schemas/inline_response_200_4"
+                  }
+                }
+              }
+            },
+            "400" : {
+              "description" : "invalid query inputs\n"
+            },
+            "401" : {
+              "description" : "Log in unsuccesful.\nNothing is returned, except 401 status code.\n"
+            },
+            "403" : {
+              "description" : "Client has not confirmed account.\n"
+            },
+            "404" : {
+              "description" : "Ticket not found.\n"
+            },
+            "500" : {
+              "description" : "Unable to update due to server error.\n"
+            }
+          }
+        }
+      }
+    },
+    "components" : {
+      "schemas" : {
+        "ErrorSchema" : {
+          "required" : [ "error" ],
+          "type" : "object"
+        },
+        "SignUpBadSyntax" : {
+          "required" : [ "first_name", "last_name", "password", "password_confirmation", "username" ],
+          "type" : "object"
+        },
+        "ChangePasswordRequest" : {
+          "required" : [ "new_password", "new_password_confirmation", "username" ],
+          "type" : "object",
+          "properties" : {
+            "username" : {
+              "type" : "string",
+              "example" : "marloncalvo"
+            },
+            "new_password" : {
+              "type" : "string",
+              "example" : "password123!!"
+            },
+            "new_password_confirmation" : {
+              "type" : "string",
+              "example" : "password123!!"
+            },
+            "old_password" : {
+              "type" : "string",
+              "example" : "password123!"
+            },
+            "reset_token" : {
+              "type" : "string",
+              "example" : "abcd12312dd"
+            }
+          }
+        },
+        "ConfirmRequest" : {
+          "required" : [ "email", "verification_token" ],
+          "type" : "object",
+          "properties" : {
+            "verification_token" : {
+              "type" : "string",
+              "example" : "1234adfv123sqas"
+            },
+            "email" : {
+              "type" : "string",
+              "example" : "marlon@email.com"
+            }
+          }
+        },
+        "ResetRequest" : {
+          "required" : [ "email" ],
+          "type" : "object",
+          "properties" : {
+            "email" : {
+              "type" : "string",
+              "example" : "marlon@email.com"
+            }
+          }
+        },
+        "SignUpRequest" : {
+          "required" : [ "email", "first_name", "last_name", "password", "password_confirmation", "username" ],
+          "type" : "object",
+          "properties" : {
+            "first_name" : {
+              "type" : "string",
+              "example" : "Marlon"
+            },
+            "last_name" : {
+              "type" : "string",
+              "example" : "Calvo"
+            },
+            "email" : {
+              "type" : "string",
+              "example" : "marlon@email.com"
+            },
+            "username" : {
+              "type" : "string",
+              "example" : "marloncalvo"
+            },
+            "password" : {
+              "type" : "string",
+              "example" : "password123!"
+            },
+            "password_confirmation" : {
+              "type" : "string",
+              "example" : "password123!"
+            }
+          }
+        },
+        "LoginRequest" : {
+          "required" : [ "password", "username" ],
+          "type" : "object",
+          "properties" : {
+            "username" : {
+              "type" : "string",
+              "example" : "marloncalvo"
+            },
+            "password" : {
+              "type" : "string",
+              "example" : "password123!"
+            }
+          }
+        },
+        "TicketBase" : {
+          "type" : "object",
+          "properties" : {
+            "image" : {
+              "type" : "string",
+              "description" : "Binary representation of image to upload",
+              "format" : "byte"
+            },
+            "license_plate" : {
+              "type" : "string",
+              "description" : "Name of the license plate",
+              "example" : "123ABC"
+            },
+            "violation" : {
+              "type" : "string",
+              "description" : "One of the enumerated violations",
+              "example" : "Expired Tag",
+              "enum" : [ "Expired Tag", "No Tag", "Improper Parking" ]
+            },
+            "description" : {
+              "type" : "string",
+              "description" : "User input to describe situation",
+              "example" : "He parked horribly!"
+            },
+            "location" : {
+              "type" : "string",
+              "description" : "One of the enumerated parking to be passed",
+              "example" : "Garage A",
+              "enum" : [ "Garage A", "Garage B" ]
+            },
+            "additional_comments" : {
+              "type" : "string",
+              "description" : "Optional field for any additional comments",
+              "example" : "Please give him ticket!"
+            }
+          }
+        },
+        "DatabaseTicketWithoutHistory" : {
+          "required" : [ "_id", "_userId", "createdAt", "status", "updatedAt" ],
+          "type" : "object",
+          "properties" : {
+            "_userId" : {
+              "type" : "string",
+              "description" : "id of user that created ticket",
+              "example" : "5544vcvc23408934xcvf"
+            },
+            "_id" : {
+              "type" : "string",
+              "description" : "id of ticket",
+              "example" : "5544vcvc23408934xcvf"
+            },
+            "ticketor_name" : {
+              "type" : "string",
+              "description" : "Name of the ticketor",
+              "example" : "Marlon Calvo"
+            },
+            "license_plate" : {
+              "type" : "string",
+              "description" : "Name of the license plate",
+              "example" : "123ABC"
+            },
+            "violation" : {
+              "type" : "string",
+              "description" : "One of the enumerated violations",
+              "example" : "Expired Tag",
+              "enum" : [ "Expired Tag", "No Tag", "Improper Parking" ]
+            },
+            "description" : {
+              "type" : "string",
+              "description" : "User input to describe situation",
+              "example" : "He parked horribly!"
+            },
+            "location" : {
+              "type" : "string",
+              "description" : "One of the enumerated parking to be passed",
+              "example" : "Garage A",
+              "enum" : [ "Garage A", "Garage B" ]
+            },
+            "additional_comments" : {
+              "type" : "string",
+              "description" : "Optional field for any additional comments",
+              "example" : "Please give him ticket!"
+            },
+            "image" : {
+              "$ref" : "#/components/schemas/DatabaseTicketWithoutHistory_image"
+            },
+            "status" : {
+              "type" : "string",
+              "enum" : [ "Rejected", "Submitted", "Completed" ]
+            },
+            "createdAt" : {
+              "type" : "string",
+              "example" : "2012-10-15T21:26:17Z"
+            },
+            "updatedAt" : {
+              "type" : "string",
+              "example" : "2012-10-15T21:26:17Z"
+            }
+          }
+        },
+        "DatabaseTicket" : {
+          "allOf" : [ {
+            "$ref" : "#/components/schemas/DatabaseTicketWithoutHistory"
+          }, {
+            "type" : "object",
+            "properties" : {
+              "tickets_history" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/DatabaseTicketWithoutHistory"
+                }
+              }
+            }
+          } ]
+        },
+        "TicketCreateRequest" : {
+          "$ref" : "#/components/schemas/TicketBase"
+        },
+        "UpdateTicketRequest" : {
+          "allOf" : [ {
+            "$ref" : "#/components/schemas/TicketBase"
+          }, {
+            "type" : "object",
+            "properties" : {
+              "status" : {
+                "type" : "string",
+                "description" : "One of the enumerated status as text",
+                "enum" : [ "Rejected", "Completed", "Submitted" ]
+              }
+            }
+          } ]
+        },
+        "inline_response_200" : {
+          "type" : "object",
+          "properties" : {
+            "_userId" : {
+              "type" : "string",
+              "example" : "545bvvvaddfd1345345abc"
+            },
+            "first_name" : {
+              "type" : "string",
+              "example" : "marlon"
+            },
+            "last_name" : {
+              "type" : "string",
+              "example" : "calvo"
+            },
+            "email" : {
+              "type" : "string",
+              "example" : "marlontest@email.com"
+            },
+            "username" : {
+              "type" : "string",
+              "example" : "marlonuser"
+            }
+          }
+        },
+        "inline_response_400" : {
+          "properties" : {
+            "error" : {
+              "$ref" : "#/components/schemas/inline_response_400_error"
+            }
+          }
+        },
+        "inline_response_409" : {
+          "properties" : {
+            "error" : {
+              "$ref" : "#/components/schemas/inline_response_409_error"
+            }
+          }
+        },
+        "inline_response_400_1" : {
+          "properties" : {
+            "error" : {
+              "$ref" : "#/components/schemas/inline_response_400_1_error"
+            }
+          }
+        },
+        "inline_response_200_1" : {
+          "required" : [ "locations", "violations" ],
+          "type" : "object",
+          "properties" : {
+            "violations" : {
+              "type" : "array",
+              "example" : [ "No Tag", "Expired Tag" ],
+              "items" : {
+                "type" : "string"
+              }
+            },
+            "locations" : {
+              "type" : "array",
+              "example" : [ "Garage A", "Garage B" ],
+              "items" : {
+                "type" : "string"
+              }
+            }
+          }
+        },
+        "inline_response_200_2" : {
+          "properties" : {
+            "ticket_id" : {
+              "type" : "string",
+              "example" : "a23443434ubf1233"
+            }
+          }
+        },
+        "inline_response_200_3" : {
+          "type" : "object",
+          "properties" : {
+            "docs" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/components/schemas/DatabaseTicket"
+              }
+            }
+          }
+        },
+        "inline_response_200_4" : {
+          "required" : [ "tickets_by_location", "tickets_by_violation", "total_tickets" ],
+          "type" : "object",
+          "properties" : {
+            "total_tickets" : {
+              "type" : "integer",
+              "example" : 1500
+            },
+            "tickets_by_violation" : {
+              "$ref" : "#/components/schemas/inline_response_200_4_tickets_by_violation"
+            },
+            "tickets_by_location" : {
+              "$ref" : "#/components/schemas/inline_response_200_4_tickets_by_location"
+            }
+          }
+        },
+        "DatabaseTicketWithoutHistory_image" : {
+          "type" : "object",
+          "properties" : {
+            "data" : {
+              "type" : "string",
+              "format" : "byte"
+            },
+            "contentType" : {
+              "type" : "string",
+              "example" : "image/png"
+            }
+          }
+        },
+        "inline_response_400_error" : {
+          "type" : "object",
+          "properties" : {
+            "username" : {
+              "type" : "boolean",
+              "example" : false
+            },
+            "email" : {
+              "type" : "boolean",
+              "example" : false
+            },
+            "password" : {
+              "type" : "boolean",
+              "example" : false
+            },
+            "password_confirmation" : {
+              "type" : "boolean",
+              "example" : true
+            }
+          }
+        },
+        "inline_response_409_error" : {
+          "type" : "object",
+          "properties" : {
+            "email" : {
+              "type" : "boolean",
+              "example" : false
+            },
+            "username" : {
+              "type" : "boolean",
+              "example" : true
+            }
+          }
+        },
+        "inline_response_400_1_error" : {
+          "type" : "object",
+          "properties" : {
+            "username" : {
+              "type" : "boolean",
+              "example" : false
+            },
+            "old_password" : {
+              "type" : "boolean",
+              "example" : true
+            },
+            "new_password" : {
+              "type" : "boolean",
+              "example" : false
+            },
+            "reset_token" : {
+              "type" : "boolean",
+              "example" : true
+            }
+          }
+        },
+        "inline_response_200_4_tickets_by_violation" : {
+          "type" : "object",
+          "properties" : {
+            "expired_tag" : {
+              "type" : "integer",
+              "example" : 15
+            },
+            "no_tag" : {
+              "type" : "integer",
+              "example" : 25
+            },
+            "improper_tag" : {
+              "type" : "integer",
+              "example" : 35
+            }
+          }
+        },
+        "inline_response_200_4_tickets_by_location" : {
+          "type" : "object",
+          "properties" : {
+            "garage_a" : {
+              "type" : "integer",
+              "example" : 40
+            },
+            "garage_b" : {
+              "type" : "integer",
+              "example" : 32
+            }
+          }
+        }
+      }
+    }
+  }

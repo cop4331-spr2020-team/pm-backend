@@ -61,7 +61,7 @@ router.get(
  */
 router.post(
     '/:ticket_id',
-    checkLogin,
+//    checkLogin,
     validator.updateTicket,
     controller.updateTicket,
 );
