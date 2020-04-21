@@ -327,14 +327,14 @@ const getTicketsReduced = async (req, res) => {
   try {
     query = getTicketsQuery(req.query);
   } catch (e) {
-    res.json({error: 'invalid input', error_message: e}).status(400);
+    res.status(400).json({error: 'invalid input', error_message: e});
     return;
   }
 
   const options = {};
 
   if (req.error) {
-    res.json(req.error).status(req.error.statusCode || 500);
+    res.status(req.error.statusCode || 500).json(req.error);
     return;
   }
 
@@ -390,7 +390,7 @@ const getTicketsReduced = async (req, res) => {
       })
       .catch((error) => {
         console.log('error' + error);
-        res.json({error}).status(error.statusCode || 500);
+        res.status(error.statusCode || 500).json({error});
       });
   /*
       .catch((error) => {
