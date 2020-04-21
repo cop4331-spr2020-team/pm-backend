@@ -95,44 +95,19 @@ const createTicket = async (req, res) => {
           location: location,
           additional_comments: additional_comments,
           _userId: user._id,
+          image: {
+            data: image,
+            content: '',
+          },
         });
 
-        if (image) {
-          return fileType.fromBuffer((Buffer.from(image, 'base64')))
-              .catch((error) => {
-                error.statusCode = 400;
-                error.message = 'unable to parse image type';
-                throw error;
-              })
-              .then((fileInfo) => {
-                if (!fileInfo) {
-                  console.log(fileInfo);
-                  const error = new Error();
-                  error.statusCode = 400;
-                  error.message = 'unable to parse image';
-                  throw error;
-                }
-                console.log(fileInfo);
-                ticket.image = {};
-                ticket.image.data = image;
-                ticket.image.content_type = fileInfo.mime;
-                return ticket.save()
-                    .catch((error) => {
-                      error.statusCode = 500;
-                      error.message = 'Unable to store ticket';
-                      console.log(error);
-                      throw error;
-                    });
-              });
-        } else {
-          return ticket.save()
-              .catch((error) => {
-                error.statusCode = 500;
-                error.message = 'Unable to store ticket';
-                console.log(error);
-                throw error;
-              });
-        }
+        return ticket.save()
+            .catch((error) => {
+              error.statusCode = 500;
+              error.message = 'Unable to store ticket';
+              console.log(error);
+              throw error;
+            });
       })
       .then((ticket) => {
         res.json({ticket_id: ticket._id, error: ''}).status(200);
