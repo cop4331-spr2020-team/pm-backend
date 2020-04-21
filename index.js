@@ -15,22 +15,18 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(morgan('combined'));
 
-const allowedOrigins = ['http://localhost:3000',
+const whitelist = ['http://localhost:3000',
   'http://localhost:8080', 'http://www.parkingmanagerapp.com'];
-
-app.use(cors({
-  origin: function(origin, callback) {
-    // allow requests with no origin
-    // (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not ' +
-                'allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+const corsOptions = {
+  origin: (origin, callback)=>{
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
     }
-    return callback(null, true);
-  },
-}));
+  }, credentials: true,
+};
+app.use(cors(corsOptions));
 
 initMongo.connect()
     .then(() => {
