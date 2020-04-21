@@ -315,6 +315,94 @@ const getTickets = async (req, res) => {
   */
 };
 
+const getTicketsReduced = async (req, res) => {
+  let query = '';
+  try {
+    query = getTicketsQuery(req.query);
+  } catch (e) {
+    res.json({error: 'invalid input', error_message: e}).status(400);
+    return;
+  }
+
+  const options = {};
+
+  if (!req.error) {
+    res.json(req.error).status(req.error.statusCode || 500);
+    return;
+  }
+
+  if ((req.query.page || req.query.limit) !== undefined) {
+    options.page = req.query.page || 1;
+    options.limit = req.query.limit || 10;
+  } else {
+    options.paginate = false;
+  }
+
+  console.log(query);
+  console.log(options);
+
+  // For whatever reason, promises where not working.
+  Ticket.paginate(query, options)
+      .catch((error) => {
+        error.statusCode = 500;
+        error.message = 'server failure during find';
+        throw error;
+      })
+      .then((tickets) => {
+        if (!tickets) {
+          res.json([]).status(200);
+          return;
+        }
+
+        const min = req.query.day_start ? Number(req.query.day_start) : 0;
+        const max = req.query.day_end ? Number(req.query.day_end) : 1440;
+
+        const response = {};
+        response.docs = [];
+
+        tickets.docs.forEach((ticket) => {
+          let d = new Date(ticket.createdAt);
+          d = d.getHours() * 60 + d.getMinutes();
+
+          if (d < min || d > max) {
+            return;
+          }
+
+          const data = {
+            violation: ticket.violation,
+            status: ticket.status,
+            location: ticket.location,
+            createdAt: ticket.createdAt,
+          };
+
+          response.docs.push(data);
+          console.log(data);
+        });
+
+        res.json(response).status(200);
+      })
+      .catch((error) => {
+        console.log('error' + error);
+        res.json({error}).status(error.statusCode || 500);
+      });
+  /*
+      .catch((error) => {
+        console.log(error);
+        error.statusCode = 500;
+        error.message = 'server failure while retrieving tickets';
+        throw error;
+      })
+      .catch((tickets) => {
+        console.log(tickets);
+        res.json(tickets).status(200);
+      })
+      .catch((error) => {
+        console.log(error);
+        res.json({error: error.message}).status(error.statusCode);
+      });
+  */
+};
+
 const getStatTickets = async (req, res) => {
   let query = '';
   try {
@@ -397,6 +485,7 @@ module.exports = {
   updateTicket,
   removeTicket,
   getTickets,
+  getTicketsReduced,
   getTicket,
   getStatTickets,
   getEnums,
