@@ -17,7 +17,15 @@ const app = express();
 app.use(cookieParser());
 app.use(express.json());
 app.use(morgan('combined'));
-app.use(cors());
+
+const whitelist = ['http://localhost:3000',
+  'http://localhost:8080', 'http://www.parkingmanagerapp.com'];
+const corsOptions = {
+  origin: (origin, callback)=>{
+    callback(null, true);
+  }, credentials: true,
+};
+app.use(cors(corsOptions));
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
