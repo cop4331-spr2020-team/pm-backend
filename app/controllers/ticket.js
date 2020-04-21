@@ -98,11 +98,18 @@ const createTicket = async (req, res) => {
         if (image) {
           return fileType.fromBuffer((Buffer.from(image, 'base64')))
               .catch((error) => {
-                error.statusCode = 404;
+                error.statusCode = 400;
                 error.message = 'unable to parse image type';
                 throw error;
               })
               .then((fileInfo) => {
+                if (!fileInfo) {
+                  console.log(fileInfo);
+                  const error = new Error();
+                  error.statusCode = 400;
+                  error.message = 'unable to parse image';
+                  throw error;
+                }
                 console.log(fileInfo);
                 ticket.image = {};
                 ticket.image.data = image;
@@ -130,7 +137,7 @@ const createTicket = async (req, res) => {
       })
       .catch((error) => {
         console.log(error);
-        res.json({error}).status(error.statusCode || 500);
+        res.status(error.statusCode || 500).json({error});
       });
 };
 
