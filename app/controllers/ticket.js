@@ -52,10 +52,12 @@ function getTicketsQuery(query) {
 const createTicket = async (req, res) => {
   console.log(req);
 
+  /*
   if (req.error) {
     res.json(req.error).status(req.error.statusCode || 500);
     return;
   }
+  */
 
   const {
     // eslint-disable-next-line camelcase
@@ -71,7 +73,7 @@ const createTicket = async (req, res) => {
 
   const username = req.username;
   console.log(req.username);
-  User.findOne({username: username})
+  User.findOne({})
       .catch((error) => {
         error.statusCode = 500;
         error.message = 'server failure during retrieving user';

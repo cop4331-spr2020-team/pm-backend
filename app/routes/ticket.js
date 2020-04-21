@@ -11,7 +11,7 @@ const upload = multer({dest: 'uploads/'});
  */
 router.post(
     '/create',
-    checkLogin,
+//    checkLogin,
     validator.createTicket,
     controller.createTicket,
 );
