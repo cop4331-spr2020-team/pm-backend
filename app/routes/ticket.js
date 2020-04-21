@@ -12,7 +12,6 @@ const upload = multer({dest: 'uploads/'});
 router.post(
     '/create',
     checkLogin,
-    upload.single('image'),
     validator.createTicket,
     controller.createTicket,
 );
@@ -22,7 +21,7 @@ router.post(
  */
 router.get(
     '/query',
-    checkLogin,
+//    checkLogin,
     validator.getTickets,
     controller.getTickets,
 );
@@ -32,7 +31,7 @@ router.get(
  */
 router.get(
     '/query_limited',
-    checkLogin,
+//    checkLogin,
     validator.getTickets,
     controller.getTicketsReduced,
 );
@@ -42,7 +41,7 @@ router.get(
  */
 router.get(
     '/stats',
-    checkLogin,
+//    checkLogin,
     validator.getStatTickets,
     controller.getStatTickets,
 );
@@ -52,7 +51,7 @@ router.get(
  */
 router.get(
     '/:ticket_id',
-    checkLogin,
+//    checkLogin,
     validator.getTicket,
     controller.getTicket,
 );
@@ -63,7 +62,6 @@ router.get(
 router.post(
     '/:ticket_id',
     checkLogin,
-    upload.single('image'),
     validator.updateTicket,
     controller.updateTicket,
 );
