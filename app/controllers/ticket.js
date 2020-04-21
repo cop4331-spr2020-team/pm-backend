@@ -95,11 +95,12 @@ const createTicket = async (req, res) => {
           location: location,
           additional_comments: additional_comments,
           _userId: user._id,
-          image: {
-            data: image,
-            content: '',
-          },
         });
+
+        if (req.body.image) {
+          ticket.image.data = req.body.image;
+          ticket.image.content_type = 'image/jpeg';
+        }
 
         return ticket.save()
             .catch((error) => {
@@ -148,10 +149,10 @@ const updateTicket = async (req, res) => {
         });
 
         if (req.body.image) {
-          const mimeInfo = fileType.fromBuffer(Buffer.from(req.body.image, 'base64'));
+          //const mimeInfo = fileType.fromBuffer(Buffer.from(req.body.image, 'base64'));
           ticket.image = {};
           ticket.image.data = req.body.image;
-          ticket.image.content_type = mimeInfo.mime;
+          ticket.image.content_type = 'image/jpeg';
         }
 
         return ticket.save().catch((error) => {
