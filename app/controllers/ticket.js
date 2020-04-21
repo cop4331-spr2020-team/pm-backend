@@ -255,7 +255,7 @@ const getTickets = async (req, res) => {
   console.log(options);
 
   // For whatever reason, promises where not working.
-  Ticket.paginate(query, options)
+  Ticket.paginate(query, {pagination: false})
       .catch((error) => {
         error.statusCode = 500;
         error.message = 'server failure during find';
