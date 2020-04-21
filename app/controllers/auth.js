@@ -135,6 +135,7 @@ const login = async (req, res) => {
           const error = new Error();
           error.statusCode = 401;
           error.message = 'invalid credentials';
+
           throw error;
         }
 
@@ -170,8 +171,8 @@ const login = async (req, res) => {
         res.status(200).json({error: ''});
       })
       .catch((err) => {
-        res.clearCookie('access_token', {path: '/'});
-        res.json(err).status(err.statusCode);
+        console.log(err.statusCode);
+        res.status(err.statusCode).json(err);
       });
 };
 
@@ -507,35 +508,40 @@ const changePassword = async (req, res) => {
           res.json({error: err.message}).status(err.statusCode);
         });
   } else if (accessToken) {
-    isLoggedIn(req, res, () => {
-      if (req.error) {
-        res.send(req.error).status(req.error.statusCode);
-        return;
-      }
+    isLoggedIn(req, res)
+        .catch((error) => {
+          throw error;
+        })
+        .then(() => {
+          return User.findOne({username: req.username});
+        })
+        .then((user) => {
+          if (!user) {
+            const error = new Error();
+            error.statusCode = 409;
+            error.message = 'user for this token not found';
 
-      User.findOne({username: req.username})
-          .then((user) => {
-            if (!user) {
-              const error = new Error();
-              error.statusCode = 409;
-              error.message = 'user for this token not found';
+            throw error;
+          }
 
-              throw error;
-            }
-
-            return changePasswordImpl(user, newPassword).catch((error) => {
-              error.statusCode = 500;
-              error.message = 'server failure during update user\'s password';
-              throw error;
-            });
-          })
-          .then((user) => {
-            res.status(200).error({error: ''});
-          })
-          .catch((err) => {
-            res.json({error: err.message}).status(err.statusCode);
+          console.log(req.body.old_password);
+          console.log(user.password);
+          //return bcrypt.compare(user.password, req.body.old_password);
+          return changePasswordImpl(user, newPassword).catch((error) => {
+            error.statusCode = 500;
+            error.message = 'server failure during update user\'s password';
+            throw error;
           });
-    });
+        })
+        .then((user) => {
+          res.status(200).json({error: ''});
+        })
+        .catch((err) => {
+          console.log(err);
+          res.json({error: err.message}).status(err.statusCode);
+        });
+  } else {
+    res.status(401).json({error: 'insufficient credentails'});
   }
 };
 
@@ -603,6 +609,57 @@ const getUserInfoById = async (req, res) => {
       .catch((error) => {
         res.json(error).status(error.statusCode);
       });
+};
+
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ */
+async function isLoggedIn(req, res) {
+  try {
+    const accessToken = req.cookies.access_token;
+    if (!accessToken) {
+      const error = new Error();
+      error.statusCode = 401;
+      error.message = 'access_token invalid';
+      throw error;
+    }
+    const payload = jwt.decode(accessToken);
+    const error = new Error();
+    if (!payload) {
+      error.statusCode = 401;
+      error.message = 'invalid access_token';
+      throw error;
+    }
+    return promisify(client.get).bind(client)(payload.username)
+        .catch((error) => {
+          error.statusCode = 500;
+          error.message = 'error finding access_token';
+          req.error = error;
+          return;
+        })
+        .then((reply) => {
+          if (!reply) {
+            error.statusCode = 401;
+            error.message = 'invalid access_token';
+            req.error = error;
+            return;
+          }
+          if (reply !== accessToken) {
+            error.statusCode = 401;
+            error.message = 'invalid access_token';
+            req.error = error;
+            return;
+          }
+          console.log('hooray');
+          req.username = payload.username;
+          console.log(req.username);
+        });
+  } catch (e) {
+    console.log(e);
+    throw e;
+  }
 };
 
 /**
