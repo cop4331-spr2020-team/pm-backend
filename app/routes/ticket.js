@@ -28,16 +28,6 @@ router.get(
 );
 
 /**
- * Get ticket information by query.
- */
-router.get(
-    '/query_limited',
-    checkLogin,
-    validator.getTickets,
-    controller.getTicketsReduced,
-);
-
-/**
  * Get ticket statistics by query.
  */
 router.get(
