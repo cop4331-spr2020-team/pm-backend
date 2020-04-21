@@ -87,7 +87,7 @@ function accountVerificationEmail(recipient, token) {
   if (env === 'development') {
     url = `http://${host}:${port}/confirm?token=${token}`;
   } else {
-    url = `http://http://34.73.25.235/confirm?token=${token}`;
+    url = `http://api.parkingmanagerapp.com/confirm?token=${token}`;
   }
 
   return sendMail(recipient, 'Account Verification',

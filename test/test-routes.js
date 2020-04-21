@@ -40,8 +40,8 @@ describe('testing express endpoints', function() {
       json: {
         first_name: 'marlon',
         last_name: 'calvo',
-        email: 'testing1234455@email.com',
-        username: 'marlon_calvo234',
+        email: 'nazlqszbvxwgrtzsgo1111111@awdrt.net',
+        username: 'marlon_calvo111111111111111',
         password: 'password23',
         password_confirmation: 'password23',
       },
@@ -65,6 +65,79 @@ describe('testing express endpoints', function() {
       json: {username: 'marlon_calvo', password: 'password1'},
     }, function(error, response, body) {
       expect(response.statusCode).to.equal(401);
+      done();
+    });
+  });
+  it('Grab tickets test', function(done) {
+    request.get({
+      url: `${apiUrl}/tickets/query_limited`,
+    }, function(error, response, body) {
+      expect(response.statusCode).to.equal(200);
+      const json = JSON.parse(body);
+      expect(json.docs).to.be.an('array').that.is.not.empty;
+      done();
+    });
+  });
+  it('Grab ticket test', function(done) {
+    request.get({
+      url: `${apiUrl}/tickets/5e9e050a9a716e001162743c`,
+    }, function(error, response, body) {
+      expect(response.statusCode).to.equal(200);
+      const json = JSON.parse(body);
+      expect(json.location).equals('Garage B');
+      done();
+    });
+  });
+  it('Create ticket test', function(done) {
+    request.post({
+      url: `${apiUrl}/tickets/create`,
+      json: {
+        license_plate: '123ABC',
+        violation: 'No Tag',
+        description: 'test',
+        location: 'Garage A',
+      },
+    }, function(error, response, body) {
+      expect(response.statusCode).to.equal(200);
+      done();
+      /*
+      const json = JSON.parse(body);
+      expect(json.ticket_id).exist;
+      request.get({
+        url: `${apiUrl}/tickets/${json.ticket_id}`,
+      }, function(error, response, body) {
+        const json = JSON.parse(body);
+        expect(json.violation).equals('No Tag');
+        done();
+      });
+      */
+    });
+  });
+  it('Update ticket test', function(done) {
+    request.post({
+      url: `${apiUrl}/tickets/5e9e050a9a716e001162743c`,
+      json: {
+        status: 'Rejected',
+      },
+    }, function(error, response, body) {
+      expect(response.statusCode).equal(200);
+      request.get({
+        url: `${apiUrl}/tickets/5e9e050a9a716e001162743c`,
+      }, function(error, response, body) {
+        expect(response.statusCode).equal(200);
+        const json = JSON.parse(body);
+        expect(json.status).equals('Rejected');
+        done();
+      });
+    });
+  });
+  it('Logout client', function(done) {
+    request.post({
+      url: `${apiUrl}/auth/logout`,
+    }, function(error, response, body) {
+      expect(response.statusCode).equal(200);
+      const json = JSON.parse(body);
+      expect(json.error).equals('Missing token');
       done();
     });
   });
